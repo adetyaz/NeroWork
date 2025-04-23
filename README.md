@@ -81,6 +81,7 @@ Everything you need to build a Svelte project, powered by [`sv`](https://github.
 1. Accept job → get paid in preferred coin.
 2. Get Paid: Auto-convert payments to preferred token → **Gasless withdrawals**.
 3. Send Invoices: Use `/invoice` links to bill clients outside the platform.
+4. Earn Credits for successful projects
 
 ## Continuity and Long-Term Viability
 
