@@ -44,7 +44,7 @@ A **decentralized gig platform** where:
 - Freelancer signs up with **AA wallet** (email/social login, no seed phrases).
 - Reputation is tracked via **Soulbound NFTs** (e.g., "Verified Web3 Dev").
 
-### Work & Milestones\*\*
+### Work & Milestones
 
 - Smart contract releases **50% upfront**, **50% on delivery**.
 - Disputes are voted on by a **DAO** (gasless votes via Paymaster).
@@ -54,7 +54,7 @@ A **decentralized gig platform** where:
 - Client pays invoice in **any token** (e.g., ETH → auto-converted to USDC via Paymaster).
 - Freelancer withdraws **without paying gas** sponsored by platform.
 
-Key NERO Chain Features Used\*\*
+Key NERO Chain Features Used
 
 | **Feature**           | **How We Use It**                                                                 | **Why It Matters**                               |
 | --------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------ |
@@ -62,9 +62,7 @@ Key NERO Chain Features Used\*\*
 | **Blockspace 2.0**    | Clients pay in any token (e.g., pay in NERO, freelancer gets USDC).               | No more "I only accept ETH."                     |
 | **EVM Compatibility** | Integrates with existing DeFi (Sablier for streaming, Chainlink for USD pricing). | Leverages existing tools for faster development. |
 
-### User Experience (Web2-Like Simplicity)
-
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+## User Experience (Web2-Like Simplicity)
 
 ## Creating a project
 
@@ -82,6 +80,15 @@ Everything you need to build a Svelte project, powered by [`sv`](https://github.
 2. Get Paid: Auto-convert payments to preferred token → **Gasless withdrawals**.
 3. Send Invoices: Use `/invoice` links to bill clients outside the platform.
 4. Earn Credits for successful projects
+
+### Reputation & Rewards
+
+Reputation NFTs: Soulbound badges for freelancers (e.g., "Top 10% Designer").
+
+$NERO Credits:
+
+- Earned by paying invoices, completing gigs.
+- Used for fee discounts or gas offsets.
 
 ## Continuity and Long-Term Viability
 
@@ -135,7 +142,50 @@ Everything you need to build a Svelte project, powered by [`sv`](https://github.
 
 **Key**: Users **never hold volatile crypto** unless they choose to.
 
-Creating a svelte project
+# High-Level Architecture
+
+### System Diagram
+
+![system design](static/design-images/system-design.png)
+
+### Core Components
+
+#### Paymaster Integration
+
+- Role: Sponsors gas for all transactions (invoices, withdrawals, disputes)
+
+![paymaster](static/design-images/paymaster-integration.png)
+
+#### Account Abstraction (AA) Wallets
+
+Features:
+
+- Social/email login (no seed phrases).
+- Auto-creation via invoice links (app.com/invoice/123)
+
+![invoice](static/design-images/invoice.png)
+
+### Freelancer Journey (Earnings & Withdrawals)
+
+Key Steps:
+
+- Submits proposal → Client approves.
+- Completes work → Submits proof.
+- Requests gasless withdrawal → Funds hit bank.
+
+![freelancer](static/design-images/freelancer.png)
+
+Key Steps:
+
+- Posts job → Funds escrow.
+- Approves work → Disputes if needed.
+- Pays via gasless invoice → Earns loyalty tokens.
+
+![client](static/design-images/client.png)
+
+### Client Journey (Hiring & Payments)
+
+### Creating a svelte project
 
 ```bash
 # create a new project in the current directory
