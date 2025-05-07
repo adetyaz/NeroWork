@@ -27,6 +27,21 @@ A **decentralized gig platform** where:
 - **Freelancers earn in their preferred token** (auto-converted via AA).
 - **Zero gas withdrawals** for freelancers.
 
+### Who This Is For (Target Audience)
+
+#### Freelancers
+
+- Web3 developers, designers, writers.
+- Traditional freelancers tired of high fees.
+- Unbanked workers (global access).
+
+#### Clients
+
+-DAOs hiring talent.
+
+- Web2 businesses dipping into crypto.
+- Crypto-native teams.
+
 ## How It Works
 
 ### Job Creation and Client Onboarding
