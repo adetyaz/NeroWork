@@ -10,9 +10,16 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
+		"noImplicitAny": true,
 		"types": ["@nomiclabs/hardhat-ethers", "node"]
 	},
-	"include": ["hardhat.config.ts", "scripts/**/*", "test/**/*", "hardhat.d.ts"]
+	"include": [
+		"hardhat.config.ts",
+		"scripts/**/*",
+		"test/**/*",
+		"hardhat.d.ts",
+		"src/**/*.svelte"
+	],
 	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
 	// except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
 	//

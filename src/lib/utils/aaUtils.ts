@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { Client, Presets } from 'userop';
 import { NERO_CHAIN_CONFIG, AA_PLATFORM_CONFIG, CONTRACT_ADDRESSES, API_KEY } from '../config';
 
+
 const ESCROW_ABI = [
 	// Mint-style function to create/lock funds
 	'function mintEscrow(address client, uint256 amount) external',
@@ -20,18 +21,24 @@ export const getProvider = () => {
 };
 
 // Get signer from browser wallet
+
+
 export const getSigner = async () => {
+	// @ts-expect-error declared a global type
 	if (!window.ethereum) {
 		throw new Error('No crypto wallet found. Please install Metamask.');
 	}
 
+	// @ts-expect-error declared a global type
 	await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+	// @ts-expect-error declared a global type
 	const provider = new ethers.providers.Web3Provider(window.ethereum);
 	return provider.getSigner();
 };
 
 // Initialize AA Client
-export const initAAClient = async (accountSigner: ethers.Signer) => {
+export const initAAClient = async () => {
 	return await Client.init(NERO_CHAIN_CONFIG.rpcUrl, {
 		overrideBundlerRpc: AA_PLATFORM_CONFIG.bundlerRpc,
 		entryPoint: CONTRACT_ADDRESSES.entryPoint
@@ -39,7 +46,7 @@ export const initAAClient = async (accountSigner: ethers.Signer) => {
 };
 
 // Get AA wallet address for a signer
-export const getAAWalletAddress = async (accountSigner: ethers.Signer, apiKey?: string) => {
+export const getAAWalletAddress = async (accountSigner: ethers.Signer) => {
 	try {
 		// Initialize the SimpleAccount builder
 		const simpleAccount = await Presets.Builder.SimpleAccount.init(
@@ -64,12 +71,14 @@ export const getAAWalletAddress = async (accountSigner: ethers.Signer, apiKey?: 
 };
 
 // Function to execute a contract call via AA with sponsored gas
+
 export const executeSponsoredOperation = async (
 	accountSigner: ethers.Signer,
 	contractAddress: string,
-	contractAbi: any,
+	contractAbi: ethers.ContractInterface,
 	functionName: string,
-	functionParams: any[],
+	functionParams: ethers.utils.Result | never[]
+	,
 	options?: {
 		apiKey?: string;
 		gasMultiplier?: number;

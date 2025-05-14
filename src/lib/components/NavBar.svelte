@@ -14,14 +14,14 @@
     <!-- Logo -->
     <div class="text-xl font-bold">
       <a href="/">
-        <img src="/logo.png" alt="logo" class="size-10">
+        <img src="/logo.png" alt="logo" class="size-40">
       </a>
     </div>
 
     <!-- Mobile -->
     <button
       class="md:hidden text-white focus:outline-none"
-      on:click={toggleMenu}
+      onclick={toggleMenu}
       aria-label="Toggle menu"
     >
       {#if isMenuOpen}

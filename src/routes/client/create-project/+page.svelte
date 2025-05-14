@@ -1,8 +1,10 @@
 <script lang="ts">
-    import { supabase } from '../lib/supabaseClient';
+    import { supabase } from '$lib/utils/supabaseClient';
     import NavBar from '$lib/components/NavBar.svelte'
-    import { getSigner, mintEscrow } from '../utils/aaUtils';
-    import { NERO_CHAIN_CONFIG } from '../config';
+    import { getSigner, mintEscrow } from '$lib/utils/aaUtils';
+    import { NERO_CHAIN_CONFIG } from '$lib/config';
+
+    const API_KEY = process.env.ETHERSCAN_API_KEY;
     
   // Form data
   let formData = $state({
@@ -15,6 +17,7 @@
   });
 
   let isSubmitting = $state(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let errorMessage = $state('');
   let txHash = $state('');
   txHash = '';
@@ -39,8 +42,8 @@
       const result = await mintEscrow(
         signer,
         userAddress,
-        metadataUri,
-        { budget: budgetNumber, apiKey: 'your_api_key_here' }
+        budgetNumber.toString(),
+        { apiKey: API_KEY }
       );
 
 
@@ -52,7 +55,7 @@
         expectations: formData.expectations,
         deadline: formData.deadline,
         budget: parseFloat(formData.budget),
-        client_id: user.id
+        // client_id: user.id
       };
 
       // Insert into Supabase
@@ -76,8 +79,8 @@
         deadline: '',
         budget: ''
       };
-    } catch (error: any) {
-      errorMessage = error.message || 'Failed to post job.';
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : 'Failed to post job.';
     } finally {
       isSubmitting = false;
     }
@@ -94,7 +97,7 @@
         Create a New Job
       </h1>
 
-      <form on:submit={handleSubmit} class="space-y-6">
+      <form onsubmit={handleSubmit} class="space-y-6">
         <div>
           <label for="name" class="block text-sm font-medium mb-2">Job Name</label>
           <input

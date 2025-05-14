@@ -1,3 +1,6 @@
+// @ts-expect-error import api key
+import { PUBLIC_NERO_API_KEY } from "$env/static/public";
+
 export const NERO_CHAIN_CONFIG = {
 	chainId: 689,
 	chainName: 'NERO Chain Testnet',
@@ -19,4 +22,4 @@ export const CONTRACT_ADDRESSES = {
 };
 
 // Your API key from the NERO Chain AA Platform
-export let API_KEY: string = process.env.PUBLIC_NERO_API_KEY;
+export const API_KEY: string = PUBLIC_NERO_API_KEY ?? '';
