@@ -32,4 +32,4 @@ const config = {
 		enabled: true
 	}
 };
-export default config;
+module.exports = config;

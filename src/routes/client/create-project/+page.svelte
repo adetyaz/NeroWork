@@ -3,8 +3,9 @@
     import NavBar from '$lib/components/NavBar.svelte'
     import { getSigner, mintEscrow } from '$lib/utils/aaUtils';
     import { NERO_CHAIN_CONFIG } from '$lib/config';
+    import { PUBLIC_ETHERSCAN_API_KEY } from "$env/static/public";
 
-    const API_KEY = process.env.ETHERSCAN_API_KEY;
+    const API_KEY = PUBLIC_ETHERSCAN_API_KEY;
     
   // Form data
   let formData = $state({

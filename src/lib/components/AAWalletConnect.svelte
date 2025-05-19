@@ -50,7 +50,7 @@ function disconnectWallet() {
 }
 
 </script>
-
+<!-- 
 <div class="relative inline-block">
   <button
     class="wallet-button px-4 py-2 text-sm font-medium text-white rounded-md bg-gradient-to-r from-gray-600 to-purple-500 hover:from-gray-700 hover:to-purple-600 disabled:from-gray-700 disabled:to-purple-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 min-w-[120px] text-center"
@@ -85,7 +85,38 @@ function disconnectWallet() {
       </button>
     </div>
   {/if}
-</div>
+</div> -->
+
+
+
+  <div class="wallet-container">
+      <h2>Account Abstraction Wallet</h2>
+      
+      <div class="connect-section">
+        <button 
+          onclick={connectWallet}
+          disabled={isLoading || isConnected}
+        >
+          {isLoading ? "Connecting..." : isConnected ? "Connected" : "Connect Wallet"}
+        </button>
+      </div>
+      
+      {#if isConnected } 
+        <div class="wallet-info">
+          <div class="address-item">
+            <strong>EOA Address:</strong> 
+            <span>{userAddress}</span>
+          </div>
+          <div class="address-item">
+            <strong>AA Wallet Address:</strong> 
+            <span>{aaWalletAddress}</span>
+          </div>
+          <p class="note">
+            This AA wallet is counterfactual and will be deployed on your first transaction.
+          </p>
+        </div>
+      {/if}
+    </div>
 
 
 <style>
