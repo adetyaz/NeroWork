@@ -1,0 +1,143 @@
+<script>
+  // Placeholder data - replace with your actual data
+  const accountBalance = "$1,500.00";
+  const recentActivity = [
+    { id: 1, type: "proposal", message: "New proposal received from WebDevPro", date: "2025-05-20T10:00:00Z" },
+    { id: 2, type: "message", message: "New message from FreelancerX", date: "2025-05-20T09:30:00Z" },
+    { id: 3, type: "payment", message: "Payment of $500 made to DesignerY", date: "2025-05-20T09:00:00Z" },
+  ];
+  const activeProjects = [
+    { id: 1, title: "Website Redesign", freelancer: "John Doe", status: "In Progress", link: "/project/1" },
+    { id: 2, title: "Mobile App Development", freelancer: "Jane Smith", status: "Awaiting Approval", link: "/project/2" },
+  ];
+  const proposalsReceived = [
+    { id: 1, jobTitle: "Logo Design", freelancer: "Alice Brown", bid: "$750", delivery: "7 days", link: "/proposal/1" },
+    { id: 2, jobTitle: "Social Media Management", freelancer: "Bob Green", bid: "$900", delivery: "10 days", link: "/proposal/2" },
+  ];
+  const postedJobs = [
+    { id: 1, title: "Need a Logo Designer", status: "Open", proposals: 5, link: "/job/1" },
+    { id: 2, title: "Social Media Manager Wanted", status: "Hiring", proposals: 12, link: "/job/2" },
+  ];
+  const paymentMethods = ["Visa", "MasterCard", "PayPal"];
+  const notifications = [
+    { id: 1, message: "FreelancerX has replied to your message.", date: "2025-05-20T10:15:00Z", type: "message" },
+    { id: 2, message: "Milestone 1 of 'Website Redesign' is awaiting your approval.", date: "2025-05-20T09:45:00Z", type: "project" },
+  ];
+</script>
+
+<div class="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+  <div class="relative py-3 sm:max-w-5xl sm:mx-auto">
+    <div class="relative container mx-auto">
+      <div class="bg-white shadow-lg rounded-lg p-8">
+        <h1 class="text-2xl font-bold mb-6">Client Dashboard</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          
+          <div class="bg-white rounded-lg shadow-md p-4">
+            <h2 class="text-lg font-semibold mb-2">Overview</h2>
+            <p class="text-gray-600">Account Balance: <span class="font-bold">{accountBalance}</span></p>
+            <h3 class="text-md font-semibold mt-4 mb-2">Recent Activity</h3>
+            <ul>
+              {#each recentActivity.slice(0, 3) as activity (activity.id)}
+                <li class="py-2 border-b border-gray-200">
+                  <span class="text-sm text-gray-500">{new Date(activity.date).toLocaleTimeString()}</span>
+                  <p class="text-gray-700">{activity.message}</p>
+                </li>
+              {/each}
+              {#if recentActivity.length > 3}
+                <li class="py-2 text-center"><a href="/activity" class="text-blue-500 text-sm">View All</a></li>
+              {/if}
+            </ul>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-md p-4">
+            <h2 class="text-lg font-semibold mb-2">Active Projects</h2>
+            <ul>
+              {#each activeProjects.slice(0, 3) as project (project.id)}
+                <li class="py-2 border-b border-gray-200 flex items-center justify-between">
+                  <div>
+                    <p class="text-gray-700 font-semibold">{project.title}</p>
+                    <p class="text-gray-600 text-sm">Freelancer: {project.freelancer}</p>
+                    <p class="text-gray-600 text-sm">Status: {project.status}</p>
+                  </div>
+                  <a href={project.link} class="text-blue-500 text-sm">View</a>
+                </li>
+              {/each}
+              {#if activeProjects.length > 3}
+                <li class="py-2 text-center"><a href="/projects" class="text-blue-500 text-sm">View All</a></li>
+              {/if}
+            </ul>
+          </div>
+
+          
+          <div class="bg-white rounded-lg shadow-md p-4">
+            <h2 class="text-lg font-semibold mb-2">Recent Proposals</h2>
+            <ul>
+              {#each proposalsReceived.slice(0, 3) as proposal (proposal.id)}
+                <li class="py-2 border-b border-gray-200 flex items-center justify-between">
+                  <div>
+                    <p class="text-gray-700 font-semibold">{proposal.jobTitle}</p>
+                    <p class="text-gray-600 text-sm">From: {proposal.freelancer}</p>
+                    <p class="text-gray-600 text-sm">Bid: {proposal.bid}</p>
+                  </div>
+                  <a href={proposal.link} class="text-blue-500 text-sm">View</a>
+                </li>
+              {/each}
+              {#if proposalsReceived.length > 3}
+                <li class="py-2 text-center"><a href="/proposals" class="text-blue-500 text-sm">View All</a></li>
+              {/if}
+            </ul>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <div class="bg-white rounded-lg shadow-md p-4">
+            <h2 class="text-lg font-semibold mb-2">Your Posted Jobs</h2>
+            <ul>
+              {#each postedJobs.slice(0, 3) as job (job.id)}
+                <li class="py-2 border-b border-gray-200 flex items-center justify-between">
+                  <div>
+                    <p class="text-gray-700 font-semibold">{job.title}</p>
+                    <p class="text-gray-600 text-sm">Status: {job.status}</p>
+                    <p class="text-gray-600 text-sm">Proposals: {job.proposals}</p>
+                  </div>
+                  <a href={job.link} class="text-blue-500 text-sm">Manage</a>
+                </li>
+              {/each}
+              {#if postedJobs.length > 3}
+                <li class="py-2 text-center"><a href="/jobs" class="text-blue-500 text-sm">View All</a></li>
+              {/if}
+            </ul>
+          </div>
+
+          
+          <div class="bg-white rounded-lg shadow-md p-4">
+            <h2 class="text-lg font-semibold mb-2">Notifications</h2>
+            <ul>
+              {#each notifications.slice(0, 3) as notification (notification.id)}
+                <li class="py-2 border-b border-gray-200">
+                  <span class="text-sm text-gray-500">{new Date(notification.date).toLocaleTimeString()}</span>
+                  <p class="text-gray-700">{notification.message}</p>
+                </li>
+              {/each}
+              {#if notifications.length > 3}
+                <li class="py-2 text-center"><a href="/notifications" class="text-blue-500 text-sm">View All</a></li>
+              {/if}
+            </ul>
+          </div>
+        </div>
+
+        
+        <div class="mt-8 bg-white rounded-lg shadow-md p-4">
+          <h2 class="text-lg font-semibold mb-2">Quick Links</h2>
+          <div class="flex space-x-4">
+            <a href="/post-job" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Post a Job</a>
+            <a href="/find-freelancers" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Find Freelancers</a>
+            <a href="/transactions" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">View Transactions</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

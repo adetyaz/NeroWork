@@ -1,4 +1,5 @@
 <script>
+	import NftMint from "$lib/components/NFTMint.svelte";
   import NavBar from "../lib/components/NavBar.svelte";
   
 </script>
@@ -14,6 +15,9 @@
       </p>
     </div>
   </section>
+  <div>
+    <NftMint />
+  </div>
 
   <!-- Call to Action Section -->
   <section class="py-16 px-6 bg-gray-800 text-white">

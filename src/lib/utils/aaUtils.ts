@@ -18,15 +18,28 @@ export const getProvider = () => {
 export const getSigner = async () => {
 	// @ts-expect-error declared a global type
 	if (!window.ethereum) {
-		throw new Error('No crypto wallet found. Please install Metamask.');
+		throw new Error('No crypto wallet found. Please install MetaMask.');
 	}
 
-	// @ts-expect-error declared a global type
-	await window.ethereum.request({ method: 'eth_requestAccounts' });
+	try {
+		// Request account access
+		// @ts-expect-error declared a global type
+		await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-	// @ts-expect-error declared a global type
-	const provider = new ethers.providers.Web3Provider(window.ethereum);
-	return provider.getSigner();
+		// Create provider and signer
+		// @ts-expect-error declared a global type
+		const provider = new ethers.providers.Web3Provider(window.ethereum);
+		const signer = provider.getSigner();
+
+		// Verify the signer by getting its address
+		const address = await signer.getAddress();
+		console.log('Connected wallet address:', address);
+
+		return signer;
+	} catch (error) {
+		console.error('Error connecting to wallet:', error);
+		throw error;
+	}
 };
 
 // Initialize AA Client
@@ -40,6 +53,11 @@ export const initAAClient = async (accountSigner: ethers.Signer) => {
 // Get AA wallet address for a signer
 export const getAAWalletAddress = async (accountSigner: ethers.Signer) => {
 	try {
+		// Ensure we have a valid signer with getAddress method
+		if (!accountSigner || typeof accountSigner.getAddress !== 'function') {
+			throw new Error('Invalid signer object: must have a getAddress method');
+		}
+
 		// Initialize the SimpleAccount builder
 		const simpleAccount = await Presets.Builder.SimpleAccount.init(
 			accountSigner,
@@ -291,34 +309,34 @@ export const executeOperation = async (
 	}
 };
 
-export const mintNFT = async (
-	accountSigner: ethers.Signer,
-	recipientAddress: string,
-	metadataUri: string,
-	paymentType: number = 0,
-	selectedToken: string = '',
-	options?: {
-		apiKey?: string;
-		gasMultiplier?: number;
-	}
-) => {
-	try {
-		// Execute the mint function
-		return await executeOperation(
-			accountSigner,
-			CONTRACT_ADDRESSES.nftContract,
-			NFT_ABI,
-			'mint',
-			[recipientAddress, metadataUri],
-			paymentType,
-			selectedToken,
-			options
-		);
-	} catch (error) {
-		console.error('Error minting NFT:', error);
-		throw error;
-	}
-};
+// export const mintNFT = async (
+// 	accountSigner: ethers.Signer,
+// 	recipientAddress: string,
+// 	metadataUri: string,
+// 	paymentType: number = 0,
+// 	selectedToken: string = '',
+// 	options?: {
+// 		apiKey?: string;
+// 		gasMultiplier?: number;
+// 	}
+// ) => {
+// 	try {
+// 		// Execute the mint function
+// 		return await executeOperation(
+// 			accountSigner,
+// 			CONTRACT_ADDRESSES.nftContract,
+// 			NFT_ABI,
+// 			'mint',
+// 			[recipientAddress, metadataUri],
+// 			paymentType,
+// 			selectedToken,
+// 			options
+// 		);
+// 	} catch (error) {
+// 		console.error('Error minting NFT:', error);
+// 		throw error;
+// 	}
+// };
 
 export const getSupportedTokens = async (client: any, builder: any) => {
 	try {
@@ -506,3 +524,28 @@ export const getSupportedTokens = async (client: any, builder: any) => {
 // 		throw error;
 // 	}
 // };
+
+export const mintNFT = async (
+	accountSigner: ethers.Signer,
+	recipientAddress: string,
+	metadataUri: string,
+	options?: {
+		apiKey?: string;
+		gasMultiplier?: number;
+	}
+) => {
+	try {
+		// Execute the mint function with sponsored gas
+		return await executeSponsoredOperation(
+			accountSigner,
+			CONTRACT_ADDRESSES.nftContract,
+			NFT_ABI,
+			'mint',
+			[recipientAddress, metadataUri],
+			options
+		);
+	} catch (error) {
+		console.error('Error minting NFT:', error);
+		throw error;
+	}
+};

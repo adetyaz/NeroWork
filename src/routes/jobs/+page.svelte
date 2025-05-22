@@ -1,113 +1,189 @@
 <script>
-  // Placeholder data - we'll make this dynamic later
-  const service = {
-    title: "I will design a professional logo for your business",
-    description: `I will create a unique and memorable logo that perfectly represents your brand. With years of experience in graphic design, I ensure high-quality and original designs. You will receive multiple concepts and revisions until you are completely satisfied.`,
-    packages: [
-      { name: "Basic", price: 50, features: ["1 Logo Concept", "2 Revisions", "High-Resolution Files"] },
-      { name: "Standard", price: 100, features: ["3 Logo Concepts", "Unlimited Revisions", "Source Files", "Brand Guidelines"] },
-      { name: "Premium", price: 150, features: ["5 Logo Concepts", "Unlimited Revisions", "Source Files", "Brand Guidelines", "Social Media Kit"] },
-    ],
-    freelancer: {
-      name: "CreativePro",
-      username: "creative_pro",
-      profilePicture: "https://via.placeholder.com/80", // Replace with actual image URL
-      rating: 4.8,
-      reviews: 125,
+  // Placeholder job data - replace with your actual data
+  const jobs = [
+    {
+      id: 1,
+      title: "Senior Frontend Developer",
+      company: "Tech Innovations Inc.",
+      location: "Remote",
+      type: "Full-time",
+      description: "We are looking for an experienced frontend developer proficient in modern JavaScript frameworks like React and Svelte. You will be responsible for leading the development of our user interface and ensuring a seamless user experience.",
+      salary: "$120,000 - $150,000",
+      postedDate: "2025-05-18",
+      tags: ["React", "JavaScript", "Svelte", "UI/UX", "TypeScript"],
     },
-    images: [
-      "https://via.placeholder.com/400x300/abcdef/ffffff?Text=Logo+Example+1",
-      "https://via.placeholder.com/400x300/fedcba/ffffff?Text=Logo+Example+2",
-    ],
-    deliveryTime: "3 Days",
-    tags: ["logo design", "branding", "graphic design", "business logo"],
-    revisions: "Unlimited",
-    addons: [
-      { name: "Extra Fast Delivery (1 Day)", price: 20 },
-      { name: "Social Media Kit", price: 30 },
-    ],
-    reviewsList: [
-      { author: "AwesomeClient", rating: 5, comment: "Fantastic work! The logo is exactly what I wanted." },
-      { author: "HappyBuyer", rating: 4, comment: "Great communication and a good design." },
-    ],
-    primaryColor: "oklch(21% 0.034 264.665)",
-    cardBackgroundColor: "oklch(25% 0.034 264.665)",
-    reviewCardBackgroundColor: "oklch(28% 0.034 264.665)",
-    textColor: "white", // Adjust as needed for contrast
-    buttonColor: "#007bff", // Example button color
-  };
+    {
+      id: 2,
+      title: "Creative Graphic Designer",
+      company: "Creative Solutions Ltd.",
+      location: "Lagos, Nigeria",
+      type: "Contract",
+      description: "Seeking a talented and imaginative graphic designer to create compelling marketing materials across various platforms. Strong portfolio showcasing branding and digital design is required.",
+      salary: "$30 - $50/hour",
+      postedDate: "2025-05-17",
+      tags: ["Adobe Photoshop", "Illustrator", "Figma", "Branding", "Digital Design"],
+    },
+    {
+      id: 3,
+      title: "SEO Content Writer",
+      company: "Global Content Agency",
+      location: "Remote",
+      type: "Freelance",
+      description: "We need a skilled and detail-oriented content writer with a strong understanding of SEO principles to produce high-quality blog posts and articles that drive organic traffic.",
+      salary: "$0.10 - $0.15/word",
+      postedDate: "2025-05-16",
+      tags: ["SEO", "Content Marketing", "Blog Writing", "Keyword Research"],
+    },
+    {
+      id: 4,
+      title: "Junior Backend Developer",
+      company: "Innovate Software",
+      location: "New York, USA",
+      type: "Full-time",
+      description: "Exciting opportunity for a junior backend developer to join our growing team. You will work on building and maintaining our server-side applications using Node.js and Express.",
+      salary: "$70,000 - $90,000",
+      postedDate: "2025-05-15",
+      tags: ["Node.js", "Express", "REST API", "Database"],
+    },
+  ];
+
+  const categories = ["All", "Web Development", "Graphic Design", "Writing", "Marketing"];
+  const jobTypes = ["All", "Full-time", "Part-time", "Contract", "Freelance", "Internship"];
+  const locations = ["All", "Remote", "Lagos, Nigeria", "New York, USA"];
+
+  let selectedCategory = "All";
+  let selectedJobType = "All";
+  let selectedLocation = "All";
+  let searchQuery = "";
+
+  $: filteredJobs = jobs.filter(job => {
+    const categoryMatch = selectedCategory === "All" || job.tags.some(tag => categories.slice(1).includes(tag));
+    const typeMatch = selectedJobType === "All" || job.type === selectedJobType;
+    const locationMatch = selectedLocation === "All" || job.location.toLowerCase().includes(selectedLocation.toLowerCase());
+    const searchMatch = searchQuery === "" || job.title.toLowerCase().includes(searchQuery.toLowerCase()) || job.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return categoryMatch && typeMatch && locationMatch && searchMatch;
+  });
+
+  const primaryBackgroundColor = 'oklch(21% 0.034 264.665)';
+  const cardBackgroundColor = 'white'; // Using white for card background for better contrast
+  const textColor = 'gray-900';
+  const subtleTextColor = 'gray-700';
+  const accentColor = 'indigo-500';
+  const accentTextColor = 'indigo-700';
+  const accentBackgroundColor = 'indigo-100';
+  const borderColor = 'gray-300';
 </script>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6" style={`background-color: ${service.primaryColor}; color: ${service.textColor};`}>
-  <div class="flex flex-col gap-3">
-    {#each service.images as image}
-      <img src={image} alt="Service Image" class="rounded-lg shadow-md">
-    {/each}
-  </div>
-
-  <div class="flex flex-col gap-4">
-    <h1 class="text-2xl font-semibold">{service.title}</h1>
-    <p class="text-gray-300">{service.description}</p>
-
-    <div class="mt-4">
-      <h2 class="text-xl font-semibold mb-2">Choose your package</h2>
-      <div class="flex flex-col gap-3">
-        {#each service.packages as packageTask}
-          <div class="rounded-lg shadow-md p-4" style={`background-color: ${service.cardBackgroundColor};`}>
-            <h3 class="text-lg font-semibold mb-1">{packageTask.name}</h3>
-            <p class="text-xl font-bold">${packageTask.price}</p>
-            <ul class="list-disc list-inside text-gray-300 mt-2">
-              {#each packageTask.features as feature}
-                <li>{feature}</li>
-              {/each}
-            </ul>
-            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-3">Order Now</button>
-          </div>
-        {/each}
+<div class="min-h-screen py-12" style={`background-color: ${primaryBackgroundColor}; color: ${textColor};`}>
+  <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="md:flex md:items-center md:justify-between mb-6">
+      <h1 class="text-3xl font-bold text-{textColor}">Job Listings</h1>
+      <div class="mt-3 md:mt-0">
+        <input type="text" id="search" class={`shadow-sm focus:ring-${accentColor} focus:border-${accentColor} block w-full sm:w-64 rounded-md border-${borderColor} py-2 px-3`} placeholder="Search keywords..." bind:value={searchQuery}>
       </div>
     </div>
 
-    <div class="mt-6 rounded-lg shadow-md p-4 flex items-center gap-4" style={`background-color: ${service.cardBackgroundColor};`}>
-      <img src={service.freelancer.profilePicture} alt={service.freelancer.name} class="w-12 h-12 rounded-full object-cover">
-      <div>
-        <h3 class="font-semibold">{service.freelancer.name} (<span class="text-gray-300">{service.freelancer.username}</span>)</h3>
-        {#if service.freelancer.rating}
-          <p class="text-sm text-gray-300">Rating: {service.freelancer.rating} ({service.freelancer.reviews} reviews)</p>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+    
+      <aside class="md:col-span-1">
+        <div class={`${cardBackgroundColor} rounded-lg shadow overflow-hidden`}>
+          <div class="p-6">
+            <h2 class="text-lg font-semibold text-{subtleTextColor} mb-4">Filter By</h2>
+
+            <div class="mb-4">
+              <label for="category" class="block text-sm font-medium text-{subtleTextColor}">Category</label>
+              <select id="category" class={`mt-1 block w-full rounded-md border-${borderColor} shadow-sm focus:ring-${accentColor} focus:border-${accentColor} sm:text-sm`} bind:value={selectedCategory}>
+                {#each categories as category}
+                  <option value={category}>{category}</option>
+                {/each}
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label for="jobType" class="block text-sm font-medium text-{subtleTextColor}">Job Type</label>
+              <select id="jobType" class={`mt-1 block w-full rounded-md border-${borderColor} shadow-sm focus:ring-${accentColor} focus:border-${accentColor} sm:text-sm`} bind:value={selectedJobType}>
+                {#each jobTypes as type}
+                  <option value={type}>{type}</option>
+                {/each}
+              </select>
+            </div>
+
+            <div>
+              <label for="location" class="block text-sm font-medium text-{subtleTextColor}">Location</label>
+              <select id="location" class={`mt-1 block w-full rounded-md border-${borderColor} shadow-sm focus:ring-${accentColor} focus:border-${accentColor} sm:text-sm`} bind:value={selectedLocation}>
+                {#each locations as location}
+                  <option value={location}>{location}</option>
+                {/each}
+              </select>
+            </div>
+
+           
+          </div>
+        </div>
+      </aside>
+
+     
+      <div class="md:col-span-3">
+        {#if filteredJobs.length > 0}
+          <ul class="space-y-4">
+            {#each filteredJobs as job (job.id)}
+              <li class={`${cardBackgroundColor} rounded-lg shadow overflow-hidden hover:shadow-md transition duration-200 border border-white`}>
+                <div class="p-6">
+                  <h3 class="text-xl font-semibold text-{textColor} mb-2">{job.title}</h3>
+                  <p class={`text-${subtleTextColor} mb-1`}><span class="font-semibold">Company:</span> {job.company}</p>
+                  <p class={`text-${subtleTextColor} mb-1`}><span class="font-semibold">Location:</span> {job.location}</p>
+                  <p class={`text-${subtleTextColor} mb-2`}><span class="font-semibold">Type:</span> <span class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${accentBackgroundColor} text-${accentTextColor}`}>{job.type}</span></p>
+                  <p class={`text-gray-600 text-sm line-clamp-3 mb-3`}>{job.description}</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">Posted on: {new Date(job.postedDate).toLocaleDateString()}</span>
+                    <a href={`/job/${job.id}`} class={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-${accentTextColor} bg-${accentBackgroundColor} hover:bg-${accentBackgroundColor}-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${accentColor}`}>
+                      View Details
+                      <svg class="-mr-1 ml-2 h-5 w-5 text-{accentColor}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                      </svg>
+                    </a>
+                  </div>
+                  {#if job.tags && job.tags.length > 0}
+                    <div class="mt-3">
+                      {#each job.tags as tag}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-800 mr-2">{tag}</span>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              </li>
+            {/each}
+          </ul>
+        {:else}
+          <div class={`${cardBackgroundColor} rounded-lg shadow p-6 text-center`}>
+            <p class="text-gray-600">No jobs match your current filters.</p>
+          </div>
+        {/if}
+
+        
+        {#if jobs.length > 10}
+          <div class="mt-8 flex justify-center">
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <a href="#" class={`relative inline-flex items-center px-4 py-2 rounded-l-md border border-${borderColor} bg-${cardBackgroundColor} text-sm font-medium text-gray-500 hover:bg-gray-50`}>
+                Previous
+              </a>
+              {#each Array(Math.ceil(jobs.length / 10)) as _, i}
+                <a href="#" aria-current="page" class={`bg-${accentBackgroundColor} border-${accentColor} text-${accentTextColor} relative inline-flex items-center px-4 py-2 border text-sm font-medium`}>
+                  {i + 1}
+                </a>
+              {/each}
+              <a href="#" class={`relative inline-flex items-center px-4 py-2 rounded-r-md border border-${borderColor} bg-${cardBackgroundColor} text-sm font-medium text-gray-500 hover:bg-gray-50`}>
+                Next
+              </a>
+            </nav>
+          </div>
         {/if}
       </div>
-      <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ml-auto">Contact Seller</button>
     </div>
-
-    <div class="mt-6 rounded-lg shadow-md p-4" style={`background-color: ${service.cardBackgroundColor};`}>
-      <h2 class="text-xl font-semibold mb-2">Service Details</h2>
-      <p class="text-gray-300">Delivery Time: {service.deliveryTime}</p>
-      <p class="text-gray-300">Revisions: {service.revisions}</p>
-      {#if service.tags.length > 0}
-        <p class="text-gray-300">Tags: <span class="text-blue-400">{service.tags.join(', ')}</span></p>
-      {/if}
-      {#if service.addons.length > 0}
-        <h3 class="font-semibold mt-3">Add-ons</h3>
-        <ul class="list-disc list-inside text-gray-300 mt-2">
-          {#each service.addons as addon}
-            <li>{addon.name} - <span class="font-bold">${addon.price}</span></li>
-          {/each}
-        </ul>
-      {/if}
-    </div>
-
-    {#if service.reviewsList.length > 0}
-      <div class="mt-6 rounded-lg shadow-md p-4" style={`background-color: ${service.cardBackgroundColor};`}>
-        <h2 class="text-xl font-semibold mb-2">Client Reviews</h2>
-        <div class="flex flex-col gap-3">
-          {#each service.reviewsList as review}
-            <div class="rounded-md p-3" style={`background-color: ${service.reviewCardBackgroundColor};`}>
-              <p class="font-semibold">{review.author}</p>
-              <p class="text-sm text-gray-400">Rating: {review.rating}/5</p>
-              <p class="text-gray-300">{review.comment}</p>
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
   </div>
 </div>
+
+<style>
+  /* You can still define custom colors here if needed */
+</style>
