@@ -19,17 +19,12 @@
 							<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
 						</svg>
 					</div>
-					<span class="text-lg font-bold">MyJob</span>
 				</a>
 				<nav class="hidden items-center space-x-6 md:flex">
 					<a href="/" class="text-gray-500 hover:text-gray-900"> Home </a>
-					<a href="/find-job" class="text-gray-500 hover:text-gray-900"> Find Job </a>
-					<a href="/find-employers" class="text-gray-500 hover:text-gray-900"> Find Employers </a>
+					<a href="/find-jobs" class="text-gray-500 hover:text-gray-900"> Find Job </a>
+					<a href="/find-candidates" class="text-gray-500 hover:text-gray-900"> Find Candidates </a>
 					<a href="/dashboard" class="font-medium text-[#0066ff]"> Dashboard </a>
-					<a href="/job-alerts" class="text-gray-500 hover:text-gray-900"> Job Alerts </a>
-					<a href="/customer-support" class="text-gray-500 hover:text-gray-900">
-						Customer Support
-					</a>
 				</nav>
 			</div>
 			<div class="flex items-center space-x-6">

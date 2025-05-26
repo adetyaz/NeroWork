@@ -166,6 +166,7 @@
 					<button
 						class="p-1 {viewMode === 'grid' ? 'bg-[#0066ff] text-white' : 'text-gray-400'} rounded"
 						onclick={() => (viewMode = 'grid')}
+						aria-label="switch to grid view"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -187,6 +188,7 @@
 					<button
 						class="p-1 {viewMode === 'list' ? 'bg-[#0066ff] text-white' : 'text-gray-400'} rounded"
 						onclick={() => (viewMode = 'list')}
+						aria-label="switch to list view"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"

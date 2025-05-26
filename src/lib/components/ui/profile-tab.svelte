@@ -2,7 +2,7 @@
 	<div class="mb-6 border-b border-dashed border-gray-200 pb-6">
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700">Nationality</label>
+				<h3 class="mb-1 block text-sm font-medium text-gray-700">Nationality</h3>
 				<div class="relative">
 					<select
 						class="w-full appearance-none rounded-md border px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-[#0066ff] focus:outline-none"
@@ -30,7 +30,7 @@
 				</div>
 			</div>
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700">Date of Birth</label>
+				<h3 class="mb-1 block text-sm font-medium text-gray-700">Date of Birth</h3>
 				<div class="relative">
 					<input type="date" placeholder="dd/mm/yyyy" class="w-full rounded-md border px-4 py-2" />
 					<svg
@@ -58,7 +58,7 @@
 	<div class="mb-6 border-b border-dashed border-gray-200 pb-6">
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700">Gender</label>
+				<h3 class="mb-1 block text-sm font-medium text-gray-700">Gender</h3>
 				<div class="relative">
 					<select
 						class="w-full appearance-none rounded-md border px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-[#0066ff] focus:outline-none"
@@ -85,7 +85,7 @@
 				</div>
 			</div>
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700">Marital Status</label>
+				<h3 class="mb-1 block text-sm font-medium text-gray-700">Marital Status</h3>
 				<div class="relative">
 					<select
 						class="w-full appearance-none rounded-md border px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-[#0066ff] focus:outline-none"
@@ -118,7 +118,7 @@
 	<div class="mb-6 border-b border-dashed border-gray-200 pb-6">
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700">Education</label>
+				<h3 class="mb-1 block text-sm font-medium text-gray-700">Education</h3>
 				<div class="relative">
 					<select
 						class="w-full appearance-none rounded-md border px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-[#0066ff] focus:outline-none"
@@ -146,7 +146,7 @@
 				</div>
 			</div>
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700">Experience</label>
+				<h3 class="mb-1 block text-sm font-medium text-gray-700">Experience</h3>
 				<div class="relative">
 					<select
 						class="w-full appearance-none rounded-md border px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-[#0066ff] focus:outline-none"
@@ -178,120 +178,11 @@
 	</div>
 
 	<div class="mb-6">
-		<label class="mb-1 block text-sm font-medium text-gray-700">Biography</label>
+		<h3 class="mb-1 block text-sm font-medium text-gray-700">Biography</h3>
 		<textarea
 			placeholder="Write down your biography here. Let the employers know who you are..."
 			class="min-h-[120px] w-full rounded-md border px-4 py-2"
 		></textarea>
-		<div class="mt-2 flex items-center space-x-2">
-			<button class="rounded border p-1.5 hover:bg-gray-50">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
-					<path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
-				</svg>
-			</button>
-			<button class="rounded border p-1.5 hover:bg-gray-50">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<line x1="19" y1="4" x2="10" y2="4"></line>
-					<line x1="14" y1="20" x2="5" y2="20"></line>
-					<line x1="15" y1="4" x2="9" y2="20"></line>
-				</svg>
-			</button>
-			<button class="rounded border p-1.5 hover:bg-gray-50">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path>
-					<line x1="4" y1="21" x2="20" y2="21"></line>
-				</svg>
-			</button>
-			<button class="rounded border p-1.5 hover:bg-gray-50">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<line x1="17" y1="10" x2="3" y2="10"></line>
-					<line x1="21" y1="6" x2="3" y2="6"></line>
-					<line x1="21" y1="14" x2="3" y2="14"></line>
-					<line x1="17" y1="18" x2="3" y2="18"></line>
-				</svg>
-			</button>
-			<button class="rounded border p-1.5 hover:bg-gray-50">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<line x1="8" y1="6" x2="21" y2="6"></line>
-					<line x1="8" y1="12" x2="21" y2="12"></line>
-					<line x1="8" y1="18" x2="21" y2="18"></line>
-					<line x1="3" y1="6" x2="3.01" y2="6"></line>
-					<line x1="3" y1="12" x2="3.01" y2="12"></line>
-					<line x1="3" y1="18" x2="3.01" y2="18"></line>
-				</svg>
-			</button>
-			<button class="rounded border p-1.5 hover:bg-gray-50">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<line x1="10" y1="6" x2="21" y2="6"></line>
-					<line x1="10" y1="12" x2="21" y2="12"></line>
-					<line x1="10" y1="18" x2="21" y2="18"></line>
-					<path d="M4 6h1v1H4z"></path>
-					<path d="M4 12h1v1H4z"></path>
-					<path d="M4 18h1v1H4z"></path>
-				</svg>
-			</button>
-		</div>
 	</div>
 
 	<div class="mt-6">

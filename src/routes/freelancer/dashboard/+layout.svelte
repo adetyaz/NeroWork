@@ -148,41 +148,10 @@
 					</nav>
 				</div>
 			</div>
-
 			<!-- Main Content -->
 			<div class="flex-1">
 				{@render children()}
-
-				<!-- Log Out Button -->
-				<div class="mt-6 flex">
-					<button class="flex items-center text-gray-500 hover:text-gray-700">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="18"
-							height="18"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="mr-2"
-						>
-							<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-							<polyline points="16 17 21 12 16 7"></polyline>
-							<line x1="21" y1="12" x2="9" y2="12"></line>
-						</svg>
-						<span>Log-out</span>
-					</button>
-				</div>
 			</div>
 		</div>
 	</div>
-
-	<!-- Footer -->
-	<footer class="mt-8 border-t border-gray-200 bg-white py-4">
-		<div class="container mx-auto px-4 text-center text-sm text-gray-500">
-			© 2024 MyJob - Job Portal. All Rights Reserved
-		</div>
-	</footer>
 </div>
