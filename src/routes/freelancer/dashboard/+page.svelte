@@ -1,10 +1,10 @@
 <script lang="ts">
-import { onMount } from 'svelte';
+
 import { goto } from '$app/navigation';
 let freelancerProfile: { full_name?: string; fullName?: string } | null = null;
 let walletAddress = '';
 
-onMount(() => {
+$effect(() => {
 	walletAddress = localStorage.getItem('connectedWallet') || '';
 	if (!walletAddress) {
 		goto('/');

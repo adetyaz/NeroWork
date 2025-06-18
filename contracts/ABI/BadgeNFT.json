@@ -1,0 +1,5 @@
+[
+	"function mintBadge(address to, string name, string description, string imageUrl) external returns (uint256)",
+	"function tokenURI(uint256 tokenId) external view returns (string)",
+	"function getBadgeInfo(uint256 tokenId) external view returns (string name, string description, string imageUrl)"
+]
