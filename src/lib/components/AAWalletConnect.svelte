@@ -1,11 +1,20 @@
 <script lang='ts'>
 import { getSigner, getAAWalletAddress } from '$lib/utils/aaUtils';
+import Toast from './ui/toast.svelte';
+import { onMount } from 'svelte';
 
 let isConnected = $state(false);
 let userAddress = $state('');
 let aaWalletAddress = $state('');
 let isLoading = $state(false);
 let isDropdownOpen = $state(false);
+let showToast = $state(false);
+let toastMessage = $state('');
+let toastError = $state(false);
+let toastSuccess = $state(false);
+
+const truncatedUserAddress = $derived(truncateAddress(userAddress));
+const truncatedAAAddress = $derived(truncateAddress(aaWalletAddress));
 
 // Truncate address for display
 function truncateAddress(address: string): string {
@@ -13,29 +22,54 @@ function truncateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+
+
 // Toggle Dropdown
 async function toggleDropdown() {
   isDropdownOpen = !isDropdownOpen;
 }
 
+// On mount, check for existing wallet connection in localStorage
+onMount(() => {
+  const savedAddress = localStorage.getItem('connectedWallet');
+  const savedAA = localStorage.getItem('connectedAAWallet');
+  if (savedAddress) {
+    userAddress = savedAddress;
+    isConnected = true;
+  }
+  if (savedAA) {
+    aaWalletAddress = savedAA;
+  }
+});
 
 // Connect wallet
 async function connectWallet() {
   try {
     isLoading = true;
-
     const signer = await getSigner();
     const address = await signer.getAddress();
     userAddress = address;
-
-    
+    localStorage.setItem('connectedWallet', address);
     const aaAddress = await getAAWalletAddress(signer);
     aaWalletAddress = aaAddress;
-
+    localStorage.setItem('connectedAAWallet', aaAddress);
     isConnected = true;
+    showToast = true;
+    toastSuccess = true;
+    toastMessage = 'Wallet connected successfully!';
+    setTimeout(() => {
+      showToast = false;
+    }, 3000); // Hide toast after 3 seconds
+
   } catch (error) {
     console.error('Error connecting wallet:', error);
-    alert(error instanceof Error ? error.message : 'Failed to connect wallet');
+    showToast = true;
+    toastMessage = 'Failed to connect wallet'
+    toastError = true;
+
+    setTimeout(() => {
+      showToast = false;
+    }, 3000); // Hide toast after 3 seconds
   } finally {
     isLoading = false;
   }
@@ -47,76 +81,82 @@ function disconnectWallet() {
   userAddress = '';
   aaWalletAddress = '';
   isDropdownOpen = false;
+  localStorage.removeItem('connectedWallet');
+  localStorage.removeItem('connectedAAWallet');
 }
 
 </script>
-<!-- 
-<div class="relative inline-block">
-  <button
-    class="wallet-button px-4 py-2 text-sm font-medium text-white rounded-md bg-gradient-to-r from-gray-600 to-purple-500 hover:from-gray-700 hover:to-purple-600 disabled:from-gray-700 disabled:to-purple-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 min-w-[120px] text-center"
-    onclick={isConnected ? toggleDropdown : connectWallet}
-    disabled={isLoading}
-    title={isConnected ? userAddress : 'Connect Wallet'}
-  >
-    {#if isLoading}
-      Connecting...
-    {:else if isConnected}
-      {truncateAddress(userAddress)}
-    {:else}
-      Connect Wallet
-    {/if}
-  </button>
 
-  {#if isDropdownOpen && isConnected}
-    <div class="dropdown absolute top-full right-0 mt-2 bg-gray-800 text-white rounded-md shadow-lg p-4 w-64 z-50 animate-slide-in">
-      <div class="mb-2 text-sm break-all">
-        <strong>EOA Address:</strong>
-        <span>{truncateAddress(userAddress)}</span>
-      </div>
-      <div class="mb-2 text-sm break-all">
-        <strong>AA Wallet Address:</strong>
-        <span>{truncateAddress(aaWalletAddress)}</span>
-      </div>
-      <button
-        class="w-full px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-        onclick={disconnectWallet}
-      >
-        Disconnect
-      </button>
-    </div>
-  {/if}
-</div> -->
-
-
-
-  <div class="wallet-container">
-      <h2>Account Abstraction Wallet</h2>
-      
-      <div class="connect-section">
-        <button 
-          onclick={connectWallet}
-          disabled={isLoading || isConnected}
-        >
-          {isLoading ? "Connecting..." : isConnected ? "Connected" : "Connect Wallet"}
+<div class="relative">
+  {#if !isConnected}
+    <!-- Initial State: Connect Button -->
+    <button
+      onclick={connectWallet}
+      class="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-md hover:bg-blue-700 transition duration-200 ease-in-out
+             flex items-center justify-center {isLoading ? 'opacity-70 cursor-not-allowed' : ''}"
+      disabled={isLoading}
+    >
+      {#if isLoading}
+        <!-- Loading Spinner -->
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Connecting...
+      {:else}
+        Connect Wallet
+      {/if}
+    </button>
+  {:else}
+    <!-- Connected State: Notifications, Profile Image, and Dropdown Trigger -->
+    <div class="flex items-center space-x-6">
+      <div class="flex items-center space-x-3">
+        <!-- Notifications Button -->
+        <button class="rounded-full bg-[#f1f2f4] p-1.5" aria-label="notifications">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </button>
+        <!-- Profile Image (Dropdown Trigger) -->
+        <button onclick={toggleDropdown} class="h-9 w-9 overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          <img src="https://placehold.co/36x36/cccccc/333333?text=P" alt="Profile" width="36" height="36" />
         </button>
       </div>
-      
-      {#if isConnected } 
-        <div class="wallet-info">
-          <div class="address-item">
-            <strong>EOA Address:</strong> 
-            <span>{userAddress}</span>
-          </div>
-          <div class="address-item">
-            <strong>AA Wallet Address:</strong> 
-            <span>{aaWalletAddress}</span>
-          </div>
-          <p class="note">
-            This AA wallet is counterfactual and will be deployed on your first transaction.
-          </p>
-        </div>
-      {/if}
     </div>
+
+    <!-- Dropdown Menu -->
+    {#if isDropdownOpen}
+      <div class="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+          <!-- Wallet Address Display -->
+          <div class="block px-4 py-2 text-sm text-gray-700">
+            <p class="font-semibold">Wallet Address:</p>
+            <p class="text-gray-500 text-xs">{truncatedUserAddress}</p>
+          </div>
+          <!-- EOA Address Display -->
+          <div class="block px-4 py-2 text-sm text-gray-700">
+            <p class="font-semibold">AA Address:</p>
+            <p class="text-gray-500 text-xs">{truncatedAAAddress}</p>
+          </div>
+          <div class="border-t border-gray-100 my-1"></div>
+          <!-- Disconnect Option -->
+          <button onclick={disconnectWallet} class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700" role="menuitem">
+            Disconnect
+          </button>
+        </div>
+      </div>
+    {/if}
+  {/if}
+</div>
+
+
+<Toast
+    open={showToast}
+    status={toastMessage}
+    success={toastSuccess}
+    error={toastError}
+/>
 
 
 <style>

@@ -10,7 +10,7 @@
 </script>
 
 <div>
-	<h2 class="mb-6 text-xl font-semibold">Logo & Banner Image</h2>
+	<h2 class="mb-6 text-xl font-semibold">Logo</h2>
 
 	<div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
 		<!-- Logo Upload -->
@@ -51,42 +51,7 @@
 		</div>
 
 		<!-- Banner Upload -->
-		<div>
-			<h3 class="mb-2 block text-sm font-medium text-gray-700">Banner Image</h3>
-			<div
-				class="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-gray-400"
-			>
-				<svg
-					class="mx-auto mb-2 h-8 w-8 text-gray-400"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-					></path>
-				</svg>
-				<p class="mb-1 text-sm text-gray-600">
-					<label class="cursor-pointer font-medium text-blue-600 hover:text-blue-500">
-						Browse photo
-						<input
-							type="file"
-							class="hidden"
-							accept="image/*"
-							onchange={(e) => handleFileUpload('banner', e)}
-						/>
-					</label>
-					or drop here
-				</p>
-				<p class="text-xs text-gray-500">
-					Banner image size should be 1920x400 pixels. Supported format: JPG, PNG, GIF. Max photo
-					size 5 MB.
-				</p>
-			</div>
-		</div>
+		<div></div>
 	</div>
 
 	<!-- Company Name -->

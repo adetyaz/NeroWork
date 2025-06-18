@@ -14,7 +14,6 @@ export const getProvider = () => {
 };
 
 // Get signer from browser wallet
-
 export const getSigner = async () => {
 	// @ts-expect-error declared a global type
 	if (!window.ethereum) {
@@ -76,6 +75,148 @@ export const getAAWalletAddress = async (accountSigner: ethers.Signer) => {
 		return address;
 	} catch (error) {
 		console.error('Error getting AA wallet address:', error);
+		throw error;
+	}
+};
+
+export const initAABuilder = async (accountSigner: ethers.Signer, apiKey?: string) => {
+	try {
+		// Ensure we have a valid signer with getAddress method
+		if (!accountSigner || typeof accountSigner.getAddress !== 'function') {
+			throw new Error('Invalid signer object: must have a getAddress method');
+		}
+
+		// Get the signer address to verify it's working
+		const signerAddress = await accountSigner.getAddress();
+		console.log('Initializing AA builder for address:', signerAddress);
+
+		// Initialize the SimpleAccount builder
+		const builder = await Presets.Builder.SimpleAccount.init(
+			accountSigner,
+			NERO_CHAIN_CONFIG.rpcUrl,
+			{
+				overrideBundlerRpc: AA_PLATFORM_CONFIG.bundlerRpc,
+				entryPoint: CONTRACT_ADDRESSES.entryPoint,
+				factory: CONTRACT_ADDRESSES.accountFactory
+			}
+		);
+
+		// Set API key for paymaster
+		const currentApiKey = apiKey || API_KEY;
+
+		// Set paymaster options with API key
+		builder.setPaymasterOptions({
+			apikey: currentApiKey,
+			rpc: AA_PLATFORM_CONFIG.paymasterRpc,
+			type: '0' // Default to free (sponsored gas)
+		});
+
+		// Set gas parameters for the UserOperation
+		builder.setCallGasLimit(300000);
+		builder.setVerificationGasLimit(2000000);
+		builder.setPreVerificationGas(100000);
+
+		return builder;
+	} catch (error) {
+		console.error('Error initializing AA builder:', error);
+		throw error;
+	}
+};
+
+// ts-expect-error anticipated to be a preset
+export const setPaymentType = (builder: any, paymentType: number, tokenAddress: string = '') => {
+	// ts-expect-error anticipated to be a preset
+	const paymasterOptions: any = {
+		type: paymentType.toString(),
+		apikey: API_KEY,
+		rpc: AA_PLATFORM_CONFIG.paymasterRpc
+	};
+
+	// Add token address if ERC20 payment is selected
+	if (paymentType > 0 && tokenAddress) {
+		paymasterOptions.token = tokenAddress;
+	}
+
+	builder.setPaymasterOptions(paymasterOptions);
+	return builder;
+};
+
+export const executeOperation = async (
+	accountSigner: ethers.Signer,
+	contractAddress: string,
+	contractAbi: any,
+	functionName: string,
+	functionParams: any[],
+	paymentType: number = 0,
+	selectedToken: string = '',
+	options?: {
+		apiKey?: string;
+		gasMultiplier?: number;
+		value?: ethers.BigNumber; // Added value parameter for native token transfers
+	}
+) => {
+	try {
+		// Validate signer
+		if (!accountSigner || typeof accountSigner.getAddress !== 'function') {
+			throw new Error('Invalid signer: missing getAddress method');
+		}
+
+		// Initialize client
+		const client = await initAAClient(accountSigner);
+
+		// Initialize builder with paymaster
+		const builder = await initAABuilder(accountSigner, options?.apiKey);
+
+		// Set payment type and token if specified
+		if (paymentType > 0 && selectedToken) {
+			// Set payment options for ERC20 tokens
+			builder.setPaymasterOptions({
+				apikey: options?.apiKey || API_KEY,
+				rpc: AA_PLATFORM_CONFIG.paymasterRpc,
+				type: paymentType.toString(),
+				token: selectedToken
+			});
+		} else {
+			// Set default payment options (sponsored)
+			builder.setPaymasterOptions({
+				apikey: options?.apiKey || API_KEY,
+				rpc: AA_PLATFORM_CONFIG.paymasterRpc,
+				type: paymentType.toString()
+			});
+		}
+
+		// Create contract instance
+		const contract = new ethers.Contract(contractAddress, contractAbi, getProvider());
+		// Encode function call data
+		const callData = contract.interface.encodeFunctionData(functionName, functionParams);
+
+		// Set transaction data in the builder, including value for native token transfers if provided
+		const value = options?.value || ethers.BigNumber.from(0);
+		console.log('Transaction value (native token):', value.toString());
+		const userOp = await builder.execute(contractAddress, value, callData);
+
+		// Send the user operation
+		console.log('Sending UserOperation to bundler');
+		const res = await client.sendUserOperation(userOp);
+
+		console.log('UserOperation sent with hash:', res.userOpHash);
+
+		// Wait for the transaction to be included
+		const receipt = await res.wait();
+
+		// Log transaction hash when available
+		if (receipt && receipt.transactionHash) {
+			console.log('Transaction mined:', receipt.transactionHash);
+		}
+
+		// Return operation results
+		return {
+			userOpHash: res.userOpHash,
+			transactionHash: receipt?.transactionHash || '',
+			receipt: receipt
+		};
+	} catch (error) {
+		console.error('Error executing operation:', error);
 		throw error;
 	}
 };
@@ -169,74 +310,10 @@ export const executeSponsoredOperation = async (
 	}
 };
 
-export const initAABuilder = async (accountSigner: ethers.Signer, apiKey?: string) => {
-	try {
-		// Ensure we have a valid signer with getAddress method
-		if (!accountSigner || typeof accountSigner.getAddress !== 'function') {
-			throw new Error('Invalid signer object: must have a getAddress method');
-		}
-
-		// Get the signer address to verify it's working
-		const signerAddress = await accountSigner.getAddress();
-		console.log('Initializing AA builder for address:', signerAddress);
-
-		// Initialize the SimpleAccount builder
-		const builder = await Presets.Builder.SimpleAccount.init(
-			accountSigner,
-			NERO_CHAIN_CONFIG.rpcUrl,
-			{
-				overrideBundlerRpc: AA_PLATFORM_CONFIG.bundlerRpc,
-				entryPoint: CONTRACT_ADDRESSES.entryPoint,
-				factory: CONTRACT_ADDRESSES.accountFactory
-			}
-		);
-
-		// Set API key for paymaster
-		const currentApiKey = apiKey || API_KEY;
-
-		// Set paymaster options with API key
-		builder.setPaymasterOptions({
-			apikey: currentApiKey,
-			rpc: AA_PLATFORM_CONFIG.paymasterRpc,
-			type: '0' // Default to free (sponsored gas)
-		});
-
-		// Set gas parameters for the UserOperation
-		builder.setCallGasLimit(300000);
-		builder.setVerificationGasLimit(2000000);
-		builder.setPreVerificationGas(100000);
-
-		return builder;
-	} catch (error) {
-		console.error('Error initializing AA builder:', error);
-		throw error;
-	}
-};
-
-// ts-expect-error anticipated to be a preset
-export const setPaymentType = (builder: any, paymentType: number, tokenAddress: string = '') => {
-	// ts-expect-error anticipated to be a preset
-	const paymasterOptions: any = {
-		type: paymentType.toString(),
-		apikey: API_KEY,
-		rpc: AA_PLATFORM_CONFIG.paymasterRpc
-	};
-
-	// Add token address if ERC20 payment is selected
-	if (paymentType > 0 && tokenAddress) {
-		paymasterOptions.token = tokenAddress;
-	}
-
-	builder.setPaymasterOptions(paymasterOptions);
-	return builder;
-};
-
-export const executeOperation = async (
+export const mintNFT = async (
 	accountSigner: ethers.Signer,
-	contractAddress: string,
-	contractAbi: any,
-	functionName: string,
-	functionParams: any[],
+	recipientAddress: string,
+	metadataUri: string,
 	paymentType: number = 0,
 	selectedToken: string = '',
 	options?: {
@@ -245,98 +322,22 @@ export const executeOperation = async (
 	}
 ) => {
 	try {
-		// Validate signer
-		if (!accountSigner || typeof accountSigner.getAddress !== 'function') {
-			throw new Error('Invalid signer: missing getAddress method');
-		}
-
-		// Initialize client
-		const client = await initAAClient(accountSigner);
-
-		// Initialize builder with paymaster
-		const builder = await initAABuilder(accountSigner, options?.apiKey);
-
-		// Set payment type and token if specified
-		if (paymentType > 0 && selectedToken) {
-			// Set payment options for ERC20 tokens
-			builder.setPaymasterOptions({
-				apikey: options?.apiKey || API_KEY,
-				rpc: AA_PLATFORM_CONFIG.paymasterRpc,
-				type: paymentType.toString(),
-				token: selectedToken
-			});
-		} else {
-			// Set default payment options (sponsored)
-			builder.setPaymasterOptions({
-				apikey: options?.apiKey || API_KEY,
-				rpc: AA_PLATFORM_CONFIG.paymasterRpc,
-				type: paymentType.toString()
-			});
-		}
-
-		// Create contract instance
-		const contract = new ethers.Contract(contractAddress, contractAbi, getProvider());
-
-		// Encode function call data
-		const callData = contract.interface.encodeFunctionData(functionName, functionParams);
-
-		// Set transaction data in the builder
-		const userOp = await builder.execute(contractAddress, 0, callData);
-
-		// Send the user operation
-		console.log('Sending UserOperation to bundler');
-		const res = await client.sendUserOperation(userOp);
-
-		console.log('UserOperation sent with hash:', res.userOpHash);
-
-		// Wait for the transaction to be included
-		const receipt = await res.wait();
-
-		// Log transaction hash when available
-		if (receipt && receipt.transactionHash) {
-			console.log('Transaction mined:', receipt.transactionHash);
-		}
-
-		// Return operation results
-		return {
-			userOpHash: res.userOpHash,
-			transactionHash: receipt?.transactionHash || '',
-			receipt: receipt
-		};
+		// Execute the mint function with sponsored gas
+		return await executeOperation(
+			accountSigner,
+			CONTRACT_ADDRESSES.nftContract,
+			NFT_ABI,
+			'mint',
+			[recipientAddress, metadataUri],
+			paymentType,
+			selectedToken,
+			options
+		);
 	} catch (error) {
-		console.error('Error executing operation:', error);
+		console.error('Error minting NFT:', error);
 		throw error;
 	}
 };
-
-// export const mintNFT = async (
-// 	accountSigner: ethers.Signer,
-// 	recipientAddress: string,
-// 	metadataUri: string,
-// 	paymentType: number = 0,
-// 	selectedToken: string = '',
-// 	options?: {
-// 		apiKey?: string;
-// 		gasMultiplier?: number;
-// 	}
-// ) => {
-// 	try {
-// 		// Execute the mint function
-// 		return await executeOperation(
-// 			accountSigner,
-// 			CONTRACT_ADDRESSES.nftContract,
-// 			NFT_ABI,
-// 			'mint',
-// 			[recipientAddress, metadataUri],
-// 			paymentType,
-// 			selectedToken,
-// 			options
-// 		);
-// 	} catch (error) {
-// 		console.error('Error minting NFT:', error);
-// 		throw error;
-// 	}
-// };
 
 export const getSupportedTokens = async (client: any, builder: any) => {
 	try {
@@ -498,54 +499,5 @@ export const getSupportedTokens = async (client: any, builder: any) => {
 		// Include paymaster URL in error for debugging
 		console.error('Paymaster URL:', AA_PLATFORM_CONFIG.paymasterRpc);
 		return [];
-	}
-};
-
-// export const mintEscrow = async (
-// 	accountSigner: ethers.Signer,
-// 	clientAddress: string,
-// 	amount: string,
-// 	options?: {
-// 		apiKey?: string;
-// 		gasMultiplier?: number;
-// 	}
-// ) => {
-// 	try {
-// 		return await executeSponsoredOperation(
-// 			accountSigner,
-// 			CONTRACT_ADDRESSES.nftContract,
-// 			ESCROW_ABI,
-// 			'mintEscrow',
-// 			[clientAddress, amount],
-// 			options
-// 		);
-// 	} catch (error) {
-// 		console.error('Error creating escrow:', error);
-// 		throw error;
-// 	}
-// };
-
-export const mintNFT = async (
-	accountSigner: ethers.Signer,
-	recipientAddress: string,
-	metadataUri: string,
-	options?: {
-		apiKey?: string;
-		gasMultiplier?: number;
-	}
-) => {
-	try {
-		// Execute the mint function with sponsored gas
-		return await executeSponsoredOperation(
-			accountSigner,
-			CONTRACT_ADDRESSES.nftContract,
-			NFT_ABI,
-			'mint',
-			[recipientAddress, metadataUri],
-			options
-		);
-	} catch (error) {
-		console.error('Error minting NFT:', error);
-		throw error;
 	}
 };

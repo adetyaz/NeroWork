@@ -1,5 +1,4 @@
 <script>
-	import DashboardLayout from '$lib/components/dashboard-layout.svelte';
 	import AccountSettingTab from '$lib/components/ui/account-setting-tab.svelte';
 	import PersonalTab from '$lib/components/ui/personal-tab.svelte';
 	import ProfileTab from '$lib/components/ui/profile-tab.svelte';

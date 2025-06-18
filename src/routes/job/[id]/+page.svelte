@@ -1,6 +1,13 @@
 <script lang="ts">
-	// Sample job data
-	const job = {
+	import type { PageProps } from './$types';
+	import { onMount } from 'svelte';
+
+	// Sample job data\
+	let { data: job }: PageProps = $props();
+
+	console.log(job.job);
+
+	const jobs = {
 		title: 'Senior UX Designer',
 		company: 'Instagram',
 		companyLogo: '/placeholder.svg?height=64&width=64',
@@ -76,8 +83,67 @@
 		}
 	];
 
-	function applyNow() {
-		alert('Redirecting to application form...');
+	// Modal state
+	let showApplyModal = $state(false)
+	let coverLetter = $state('')
+	let applyError = $state('')
+	let applySuccess = $state(false)
+	type FreelancerProfile = {
+		wallet: string;
+		// add other properties as needed
+		[key: string]: any;
+	};
+	let freelancerProfile = $state<FreelancerProfile | null>(null)
+
+	onMount(() => {
+		const profile = localStorage.getItem('freelancerProfile')
+		if (profile) {
+			freelancerProfile = JSON.parse(profile)
+		}
+	})
+
+	function openApplyModal() {
+		showApplyModal = true
+		coverLetter = ''
+		applyError = ''
+		applySuccess = false
+	}
+
+	function closeApplyModal() {
+		showApplyModal = false
+	}
+
+	function submitApplication() {
+		if (!coverLetter.trim()) {
+			applyError = 'Please enter a cover letter.';
+			return;
+		}
+		if (!freelancerProfile) {
+			applyError = 'Please complete your freelancer profile first.';
+			return;
+		}
+		const jobId = job.job.id;
+		const applications = JSON.parse(localStorage.getItem('jobApplications') || '{}');
+		if (!applications[jobId]) applications[jobId] = [];
+		// Prevent duplicate applications by wallet address
+		const alreadyApplied = freelancerProfile && applications[jobId].some((app: { wallet: string }) => app.wallet === (freelancerProfile ? freelancerProfile.wallet : ''));
+		if (alreadyApplied) {
+			applyError = 'You have already applied for this job.';
+			return;
+		}
+		applications[jobId].push({
+			freelancer: freelancerProfile,
+			coverLetter,
+			wallet: freelancerProfile.wallet,
+			appliedAt: new Date().toISOString()
+		});
+		localStorage.setItem('jobApplications', JSON.stringify(applications));
+		applySuccess = true;
+		setTimeout(() => {
+			showApplyModal = false;
+			// Redirect to freelancer dashboard after applying
+			window.location.href = '/freelancer/dashboard/my-invoices';
+		}, 1200);
 	}
 
 	function shareJob(platform: any) {
@@ -86,21 +152,6 @@
 </script>
 
 <div class="min-h-screen bg-gray-50">
-	<!-- Breadcrumb -->
-	<div class="border-b bg-white">
-		<div class="mx-auto max-w-6xl px-6 py-4">
-			<nav class="flex text-sm text-gray-500">
-				<a href="/" class="hover:text-blue-600">Home</a>
-				<span class="mx-2">/</span>
-				<a href="/find-job" class="hover:text-blue-600">Find Job</a>
-				<span class="mx-2">/</span>
-				<a href="/graphics-design" class="hover:text-blue-600">Graphics & Design</a>
-				<span class="mx-2">/</span>
-				<span class="text-gray-900">Job Details</span>
-			</nav>
-		</div>
-	</div>
-
 	<div class="mx-auto max-w-6xl px-6 py-8">
 		<div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
 			<!-- Main Content -->
@@ -110,40 +161,32 @@
 					<div class="mb-4 flex items-start justify-between">
 						<div class="flex items-center">
 							<img
-								src={job.companyLogo || '/placeholder.svg'}
-								alt={job.company}
+								src={job.job.client.logo_image}
+								alt={job.job.client.company_name}
 								class="mr-4 h-16 w-16 rounded-lg"
 							/>
 							<div>
 								<div class="mb-1 flex items-center gap-2">
-									<h1 class="text-2xl font-bold">{job.title}</h1>
-									{#if job.featured}
+									<h1 class="text-2xl font-bold">{job.job.title}</h1>
+									{#if jobs.featured}
 										<span
 											class="rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-600"
 											>Featured</span
 										>
 									{/if}
-									{#if job.fullTime}
+									{#if jobs.fullTime}
 										<span class="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600"
 											>Full Time</span
 										>
 									{/if}
 								</div>
-								<p class="text-gray-600">at {job.company}</p>
+								<p class="text-gray-600">at {job.job.client.company_name}</p>
 							</div>
 						</div>
-						<button
-							onclick={applyNow}
-							class="flex items-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-						>
+						<button onclick={openApplyModal} class="flex items-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700">
 							Apply Now
 							<svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M14 5l7 7m0 0l-7 7m7-7H3"
-								></path>
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
 							</svg>
 						</button>
 					</div>
@@ -153,21 +196,17 @@
 				<div class="mb-6 rounded-lg bg-white p-6 shadow-sm">
 					<h2 class="mb-4 text-xl font-semibold">Job Description</h2>
 					<div class="prose leading-relaxed text-gray-600">
-						<p>{job.description}</p>
+						<p>{job.job.description}</p>
 					</div>
 				</div>
 
 				<!-- Responsibilities -->
 				<div class="mb-6 rounded-lg bg-white p-6 shadow-sm">
 					<h2 class="mb-4 text-xl font-semibold">Responsibilities</h2>
-					<ul class="space-y-3">
-						{#each job.responsibilities as responsibility}
-							<li class="flex items-start">
-								<span class="mt-2 mr-3 h-2 w-2 flex-shrink-0 rounded-full bg-blue-600"></span>
-								<span class="text-gray-600">{responsibility}</span>
-							</li>
-						{/each}
-					</ul>
+
+					<div>
+						{job.job.responsibilities}
+					</div>
 				</div>
 
 				<!-- Share this Job -->
@@ -246,7 +285,13 @@
 							</div>
 							<div>
 								<p class="text-sm text-gray-500">JOB POSTED</p>
-								<p class="font-medium">{job.posted}</p>
+								<p class="font-medium">
+									{new Date(job.job.created_at).toLocaleDateString('en-US', {
+										day: 'numeric',
+										month: 'long',
+										year: 'numeric'
+									})}
+								</p>
 							</div>
 						</div>
 
@@ -268,7 +313,13 @@
 							</div>
 							<div>
 								<p class="text-sm text-gray-500">JOB EXPIRE IN</p>
-								<p class="font-medium">{job.deadline}</p>
+								<p class="font-medium">
+									{new Date(job.job.deadline).toLocaleDateString('en-US', {
+										day: 'numeric',
+										month: 'long',
+										year: 'numeric'
+									})}
+								</p>
 							</div>
 						</div>
 
@@ -296,7 +347,7 @@
 							</div>
 							<div>
 								<p class="text-sm text-gray-500">LOCATION</p>
-								<p class="font-medium">{job.location}</p>
+								<p class="font-medium">{jobs.location}</p>
 							</div>
 						</div>
 
@@ -317,121 +368,16 @@
 								</svg>
 							</div>
 							<div>
-								<p class="text-sm text-gray-500">OFFERED SALARY</p>
-								<p class="font-medium">{job.salary}</p>
+								<p class="text-sm text-gray-500">Budget</p>
+								<p class="font-medium">{job.job.budget}</p>
 							</div>
 						</div>
-
-						<div class="flex items-center">
-							<div class="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
-								<svg
-									class="h-5 w-5 text-purple-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6"
-									></path>
-								</svg>
-							</div>
-							<div>
-								<p class="text-sm text-gray-500">EXPERIENCE</p>
-								<p class="font-medium">{job.experience}</p>
-							</div>
-						</div>
-
-						<div class="flex items-center">
-							<div class="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
-								<svg
-									class="h-5 w-5 text-indigo-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-									></path>
-								</svg>
-							</div>
-							<div>
-								<p class="text-sm text-gray-500">QUALIFICATION</p>
-								<p class="font-medium">{job.qualification}</p>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Company Social Links -->
-				<div class="rounded-lg bg-white p-6 shadow-sm">
-					<div class="mb-4 text-center">
-						<div
-							class="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-purple-400 to-pink-400 text-2xl font-bold text-white"
-						>
-							@
-						</div>
-						<h3 class="font-semibold">Instagram</h3>
-						<p class="text-sm text-gray-500">Social media Company</p>
-					</div>
-					<div class="space-y-2 text-center">
-						<p class="text-sm">
-							<span class="text-gray-500">Founded in:</span>
-							<span class="ml-1 font-medium">March 21, 2006</span>
-						</p>
-						<p class="text-sm">
-							<span class="text-gray-500">Organization type:</span>
-							<span class="ml-1 font-medium">Private Company</span>
-						</p>
-						<p class="text-sm">
-							<span class="text-gray-500">Company size:</span>
-							<span class="ml-1 font-medium">100-150 Employees</span>
-						</p>
-						<p class="text-sm">
-							<span class="text-gray-500">Phone:</span>
-							<span class="ml-1 font-medium">(406) 555-0120</span>
-						</p>
-						<p class="text-sm">
-							<span class="text-gray-500">Email:</span>
-							<span class="ml-1 font-medium">hello@gmail.com</span>
-						</p>
-						<p class="text-sm">
-							<span class="text-gray-500">Website:</span>
-							<span class="ml-1 font-medium">https://instagram.com</span>
-						</p>
-					</div>
-					<div class="mt-4 flex justify-center space-x-2">
-						<a
-							href="#"
-							class="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-xs text-white"
-							>f</a
-						>
-						<a
-							href="#"
-							class="flex h-8 w-8 items-center justify-center rounded bg-blue-400 text-xs text-white"
-							>t</a
-						>
-						<a
-							href="#"
-							class="flex h-8 w-8 items-center justify-center rounded bg-pink-500 text-xs text-white"
-							>@</a
-						>
-						<a
-							href="#"
-							class="flex h-8 w-8 items-center justify-center rounded bg-blue-700 text-xs text-white"
-							>in</a
-						>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- Related Jobs -->
+		<!-- Related Jobs
 		<div class="mt-12">
 			<div class="mb-6 flex items-center justify-between">
 				<h2 class="text-2xl font-bold">Related Jobs</h2>
@@ -525,6 +471,32 @@
 					</div>
 				{/each}
 			</div>
-		</div>
+		</div> -->
 	</div>
+
+	{#if showApplyModal}
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+			<div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md relative">
+				<button onclick={closeApplyModal} class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+				<h2 class="text-xl font-bold mb-4">Apply for {job.job.title}</h2>
+				<textarea
+					class="w-full border rounded-lg p-2 mb-2"
+					placeholder="Write your cover letter here..."
+					oninput={e => { if (e.target) coverLetter = (e.target as HTMLTextAreaElement).value; }}
+					value={coverLetter}
+					rows="5"
+				></textarea>
+				{#if applyError}
+					<p class="text-red-500 mb-2">{applyError}</p>
+				{/if}
+				{#if applySuccess}
+					<p class="text-green-600 mb-2">Application submitted!</p>
+				{/if}
+				<div class="flex justify-end gap-2">
+					<button onclick={closeApplyModal} class="px-4 py-2 rounded bg-gray-200">Cancel</button>
+					<button onclick={submitApplication} class="px-4 py-2 rounded bg-blue-600 text-white">Submit</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>

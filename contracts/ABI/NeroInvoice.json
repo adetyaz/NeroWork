@@ -1,0 +1,5 @@
+[
+	"function createInvoice(address client, string clientEmail, string title, string description, uint256 amount) external",
+	"function markAsPaid(uint256 invoiceId) external",
+	"function getInvoice(uint256 invoiceId) external view returns (tuple(uint256 id, address freelancer, address client, string clientEmail, string title, string description, uint256 amount, uint256 createdAt, bool paid))"
+]

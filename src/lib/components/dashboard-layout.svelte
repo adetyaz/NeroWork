@@ -42,9 +42,9 @@
 							Overview
 						</a>
 						<a
-							href="/dashboard/applied-jobs"
+							href="/dashboard/my-invoices"
 							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {active ===
-							'applied-jobs'
+							'my-invoices'
 								? 'bg-[#e7f0fa] text-[#0066ff]'
 								: 'text-gray-700 hover:bg-gray-50'}"
 						>
@@ -63,7 +63,7 @@
 								<rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
 								<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
 							</svg>
-							Applied Jobs
+							My Invoices
 						</a>
 						<a
 							href="/dashboard/favorite-jobs"
@@ -89,33 +89,27 @@
 							Favorite Jobs
 						</a>
 						<a
-							href="/dashboard/job-alert"
-							class="flex items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium {active ===
-							'job-alert'
+							href="/dashboard/badges"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {active ===
+							'badges'
 								? 'bg-[#e7f0fa] text-[#0066ff]'
 								: 'text-gray-700 hover:bg-gray-50'}"
 						>
-							<div class="flex items-center">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="18"
-									height="18"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									class="mr-3"
-								>
-									<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-									<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-								</svg>
-								Job Alert
-							</div>
-							<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600"
-								>05</span
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="mr-3"
 							>
+								<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+							</svg>
+							Badges
 						</a>
 						<a
 							href="/dashboard/settings"
