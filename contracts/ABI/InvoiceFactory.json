@@ -1,6 +1,0 @@
-[
-	"function createInvoice(address client) external returns (uint256)",
-	"function markAsPaid(uint256 invoiceId) external",
-	"function ownerOf(uint256 tokenId) external view returns (address)",
-	"function paid(uint256 invoiceId) external view returns (bool)"
-]

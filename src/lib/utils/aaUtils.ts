@@ -2,6 +2,13 @@ import { ethers } from 'ethers';
 import { Client, Presets } from 'userop';
 import { NERO_CHAIN_CONFIG, AA_PLATFORM_CONFIG, CONTRACT_ADDRESSES, API_KEY } from '../config';
 
+// Extend the Window interface to include the ethereum property
+declare global {
+	interface Window {
+		ethereum?: any;
+	}
+}
+
 const NFT_ABI = [
 	'function mint(address to, string memory uri) external',
 	'function tokenURI(uint256 tokenId) external view returns (string memory)',
@@ -15,18 +22,17 @@ export const getProvider = () => {
 
 // Get signer from browser wallet
 export const getSigner = async () => {
-	// @ts-expect-error declared a global type
-	if (!window.ethereum) {
+	if (typeof window === 'undefined' || !window.ethereum) {
 		throw new Error('No crypto wallet found. Please install MetaMask.');
 	}
 
 	try {
 		// Request account access
-		// @ts-expect-error declared a global type
+
 		await window.ethereum.request({ method: 'eth_requestAccounts' });
 
 		// Create provider and signer
-		// @ts-expect-error declared a global type
+
 		const provider = new ethers.providers.Web3Provider(window.ethereum);
 		const signer = provider.getSigner();
 

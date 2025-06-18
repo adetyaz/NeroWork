@@ -2,6 +2,8 @@
 import { getSigner, getAAWalletAddress } from '$lib/utils/aaUtils';
 import Toast from './ui/toast.svelte';
 import { onMount } from 'svelte';
+import NotificationsList from './ui/NotificationsList.svelte';
+import { getNotifications } from '$lib/utils/notifications';
 
 let isConnected = $state(false);
 let userAddress = $state('');
@@ -12,6 +14,9 @@ let showToast = $state(false);
 let toastMessage = $state('');
 let toastError = $state(false);
 let toastSuccess = $state(false);
+let showNotifications = $state(false);
+
+let notifications = $state<any[]>([]);
 
 const truncatedUserAddress = $derived(truncateAddress(userAddress));
 const truncatedAAAddress = $derived(truncateAddress(aaWalletAddress));
@@ -21,8 +26,6 @@ function truncateAddress(address: string): string {
   if (!address) return '';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
-
-
 
 // Toggle Dropdown
 async function toggleDropdown() {
@@ -85,6 +88,15 @@ function disconnectWallet() {
   localStorage.removeItem('connectedAAWallet');
 }
 
+$effect(() => {
+  if (userAddress) {
+    notifications = getNotifications(userAddress);
+  }
+});
+
+function toggleNotifications() {
+  showNotifications = !showNotifications;
+}
 </script>
 
 <div class="relative">
@@ -92,8 +104,7 @@ function disconnectWallet() {
     <!-- Initial State: Connect Button -->
     <button
       onclick={connectWallet}
-      class="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-md hover:bg-blue-700 transition duration-200 ease-in-out
-             flex items-center justify-center {isLoading ? 'opacity-70 cursor-not-allowed' : ''}"
+      class="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-md hover:bg-blue-700 transition duration-200 ease-in-out flex items-center justify-center {isLoading ? 'opacity-70 cursor-not-allowed' : ''}"
       disabled={isLoading}
     >
       {#if isLoading}
@@ -111,13 +122,23 @@ function disconnectWallet() {
     <!-- Connected State: Notifications, Profile Image, and Dropdown Trigger -->
     <div class="flex items-center space-x-6">
       <div class="flex items-center space-x-3">
-        <!-- Notifications Button -->
-        <button class="rounded-full bg-[#f1f2f4] p-1.5" aria-label="notifications">
+        <!-- Notifications Button with badge -->
+        <button class="relative rounded-full bg-[#f1f2f4] p-1.5" aria-label="notifications" onclick={toggleNotifications}>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" >
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
+          {#if notifications && notifications.filter(n => !n.read).length > 0}
+            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 border border-white">{notifications.filter(n => !n.read).length}</span>
+          {/if}
         </button>
+        {#if showNotifications}
+          <div class="absolute right-0 mt-2 z-50">
+            <NotificationsList />
+          </div>
+        {/if}
+        <!-- Styled truncated wallet address -->
+        <span class="px-3 py-1 bg-gray-100 rounded-full font-mono text-xs text-gray-700 border border-gray-300">{truncatedUserAddress}</span>
         <!-- Profile Image (Dropdown Trigger) -->
         <button onclick={toggleDropdown} class="h-9 w-9 overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
           <img src="https://placehold.co/36x36/cccccc/333333?text=P" alt="Profile" width="36" height="36" />

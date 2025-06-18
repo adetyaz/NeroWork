@@ -1,70 +1,60 @@
 <script lang="ts">
+	import { supabase } from '$lib/utils/supabaseClient.js';
+	import { getSigner, executeOperation } from '$lib/utils/aaUtils';
+	import { API_KEY } from '$lib/config';
 	import { goto } from '$app/navigation';
-	import Toast from '$lib/components/ui/toast.svelte';
-	import { onMount } from 'svelte';
 
-	let walletAddress = $state('');
-	let freelancerName = $state('');
-	let freelancerAddress = $state('');
-	let clientName = $state('');
-	let clientAddress = $state('');
-	let invoiceTitle = $state('');
-	let dueDate = $state('');
-	let items = $state([{ description: '', qty: 1, price: 0 }]);
-	let isSubmitting = $state(false);
-	let toast = $state({ open: false, message: '', success: false });
+	let walletAddress = localStorage.getItem('connectedWallet') || '';
+	let projectName = '';
+	let clientName = '';
+	let clientEmail = '';
+	let projectDescription = '';
+	let amount = '';
+	let isSubmitting = false;
 
-	onMount(() => {
-		walletAddress = localStorage.getItem('connectedWallet') || '';
-		const profile = localStorage.getItem('freelancerProfile');
-		if (profile) {
-			const parsed = JSON.parse(profile);
-			freelancerName = parsed.full_name || parsed.fullName || '';
-			freelancerAddress = parsed.address || '';
-		}
-	});
-
-	function addItem() {
-		items = [...items, { description: '', qty: 1, price: 0 }];
-	}
-	function removeItem(idx: number) {
-		if (items.length > 1) items = items.filter((_, i) => i !== idx);
-	}
-	function handleItemChange(idx: number, field: string, value: any) {
-		items = items.map((item, i) => i === idx ? { ...item, [field]: value } : item);
-	}
-
-	// Handle invoice creation
-	function handleSubmit(event: Event) {
-		event.preventDefault();
+	async function handleSubmit(e: SubmitEvent) {
+		e.preventDefault();
 		isSubmitting = true;
 		try {
-			if (!invoiceTitle || !clientName || !clientAddress || !dueDate || items.some(i => !i.description || !i.qty || !i.price)) {
+			if (!projectName || !clientName || !clientEmail || !projectDescription || !amount) {
 				throw new Error('All fields are required.');
 			}
-			const subtotal = items.reduce((sum, i) => sum + i.qty * i.price, 0);
-			const newInvoice = {
-				id: Date.now().toString(),
-				title: invoiceTitle,
-				clientName,
-				clientAddress,
-				items,
-				dueDate,
-				status: 'unpaid',
-				createdAt: new Date().toISOString(),
-				freelancerWallet: walletAddress,
-				freelancerName,
-				freelancerAddress,
-				subtotal,
-				currency: 'NERO'
-			};
-			const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-			invoices.push(newInvoice);
-			localStorage.setItem('invoices', JSON.stringify(invoices));
-			toast = { open: true, message: 'Invoice created!', success: true };
-			setTimeout(() => goto('/freelancer/dashboard/my-invoices'), 1200);
+			// Mint invoice on-chain
+			const signer = await getSigner();
+			const zeroAddress = '0x0000000000000000000000000000000000000000';
+			const NeroInvoiceABI = [
+				"function createInvoice(address client, string clientEmail, string title, string description, uint256 amount) external"
+			];
+			const result = await executeOperation(
+				signer,
+				// Set your deployed NeroInvoice contract address here:
+				'0x6da24cb091a69bc3026b233dbdd146ceb3b72727',
+				NeroInvoiceABI as any,
+				'createInvoice',
+				[zeroAddress, clientEmail, projectName, projectDescription, amount],
+				0,
+				'',
+				{ apiKey: API_KEY }
+			);
+			// Save to Supabase
+			const { error } = await supabase.from('invoices').insert([
+				{
+					project_name: projectName,
+					client_name: clientName,
+					client_email: clientEmail,
+					project_description: projectDescription,
+					amount,
+					chain_tx_hash: result.transactionHash,
+					user_address: walletAddress
+				}
+			]);
+			if (error) throw error;
+			// Optionally show a toast or redirect here
+			// For now, just redirect to my-invoices
+			goto('/freelancer/dashboard/my-invoices');
 		} catch (error: any) {
-			toast = { open: true, message: error.message || 'Failed to create invoice.', success: false };
+			// Optionally show a toast for error
+			alert(error.message || error);
 		} finally {
 			isSubmitting = false;
 		}
@@ -81,37 +71,28 @@
 		<h1 class="mb-6 border-b border-gray-200 pb-2 text-2xl font-bold">Create Invoice</h1>
 		<form onsubmit={handleSubmit}>
 			<div class="mb-4">
-				<label for="invoiceTitle" class="block text-sm font-medium mb-1">Invoice Title</label>
-				<input id="invoiceTitle" type="text" class="w-full border rounded px-3 py-2" bind:value={invoiceTitle} required />
+				<label class="block text-sm font-medium mb-1">Project Name</label>
+				<input type="text" class="w-full border rounded px-3 py-2" bind:value={projectName} required />
 			</div>
 			<div class="mb-4">
-				<label for="clientName" class="block text-sm font-medium mb-1">Client Name</label>
-				<input id="clientName" type="text" class="w-full border rounded px-3 py-2" bind:value={clientName} required />
+				<label class="block text-sm font-medium mb-1">Client Name</label>
+				<input type="text" class="w-full border rounded px-3 py-2" bind:value={clientName} required />
 			</div>
 			<div class="mb-4">
-				<label for="clientAddress" class="block text-sm font-medium mb-1">Client Address</label>
-				<input id="clientAddress" type="text" class="w-full border rounded px-3 py-2" bind:value={clientAddress} required />
+				<label class="block text-sm font-medium mb-1">Client Email</label>
+				<input type="email" class="w-full border rounded px-3 py-2" bind:value={clientEmail} required />
 			</div>
 			<div class="mb-4">
-				<label for="dueDate" class="block text-sm font-medium mb-1">Due Date</label>
-				<input id="dueDate" type="date" class="w-full border rounded px-3 py-2" bind:value={dueDate} required />
+				<label class="block text-sm font-medium mb-1">Project Description</label>
+				<textarea class="w-full border rounded px-3 py-2" bind:value={projectDescription} required></textarea>
 			</div>
 			<div class="mb-4">
-				<label class="block text-sm font-medium mb-1">Invoice Items</label>
-				{#each items as item, idx}
-					<div class="flex gap-2 mb-2">
-						<input type="text" class="flex-1 border rounded px-2 py-1" placeholder="Description" bind:value={item.description} oninput={e => handleItemChange(idx, 'description', (e.target as HTMLInputElement).value)} required />
-						<input type="number" class="w-20 border rounded px-2 py-1" placeholder="Qty" min="1" bind:value={item.qty} oninput={e => handleItemChange(idx, 'qty', +(e.target as HTMLInputElement).value)} required />
-						<input type="number" class="w-28 border rounded px-2 py-1" placeholder="Price (NERO)" min="0" step="any" bind:value={item.price} oninput={e => handleItemChange(idx, 'price', +(e.target as HTMLInputElement).value)} required />
-						<button type="button" class="text-red-500" onclick={() => removeItem(idx)} disabled={items.length === 1}>✕</button>
-					</div>
-				{/each}
-				<button type="button" class="mt-2 px-3 py-1 bg-gray-200 rounded" onclick={addItem}>Add Item</button>
+				<label class="block text-sm font-medium mb-1">Amount (NERO, smallest unit)</label>
+				<input type="number" class="w-full border rounded px-3 py-2" bind:value={amount} required min="0" />
 			</div>
 			<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded" disabled={isSubmitting}>
 				{isSubmitting ? 'Creating...' : 'Create Invoice'}
 			</button>
 		</form>
-		<Toast open={toast.open} status={toast.message} success={toast.success} error={false} />
 	</div>
 {/if}

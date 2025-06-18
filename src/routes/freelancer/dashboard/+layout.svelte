@@ -1,7 +1,14 @@
-<script>
+<script lang="ts">
+	import { page } from '$app/stores';
+
 	let { children } = $props();
 
-	let active = 'overview';
+	// Get the current path
+	let currentPath: string = $page.url.pathname;
+
+	function isActive(path: string): boolean {
+		return currentPath === path;
+	}
 </script>
 
 <div class="min-h-screen bg-[#f1f2f4]">
@@ -21,10 +28,7 @@
 					<nav>
 						<a
 							href="/freelancer/dashboard/overview"
-							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {active ===
-							'overview'
-								? 'bg-[#e7f0fa] text-[#0066ff]'
-								: 'text-gray-700 hover:bg-gray-50'}"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/overview') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -45,10 +49,7 @@
 						</a>
 						<a
 							href="/freelancer/dashboard/my-invoices"
-							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {active ===
-							'my-invoices'
-								? 'bg-[#e7f0fa] text-[#0066ff]'
-								: 'text-gray-700 hover:bg-gray-50'}"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/my-invoices') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -69,10 +70,7 @@
 						</a>
 						<a
 							href="/freelancer/dashboard/create-invoice"
-							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {active ===
-							'favorite-jobs'
-								? 'bg-[#e7f0fa] text-[#0066ff]'
-								: 'text-gray-700 hover:bg-gray-50'}"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/create-invoice') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -92,10 +90,7 @@
 						</a>
 						<a
 							href="/freelancer/dashboard/badges"
-							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {active ===
-							'badges'
-								? 'bg-[#e7f0fa] text-[#0066ff]'
-								: 'text-gray-700 hover:bg-gray-50'}"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/badges') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -116,10 +111,7 @@
 						</a>
 						<a
 							href="/freelancer/dashboard/settings"
-							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {active ===
-							'settings'
-								? 'bg-[#e7f0fa] text-[#0066ff]'
-								: 'text-gray-700 hover:bg-gray-50'}"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/settings') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
