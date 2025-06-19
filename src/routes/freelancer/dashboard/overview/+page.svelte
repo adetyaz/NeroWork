@@ -27,16 +27,17 @@ const milestones = [
 
 $effect(() => {
   async function updateStats() {
-    // Get wallet address
-    let address = '';
-    const profile = localStorage.getItem('freelancerProfile');
-    if (profile) {
-      const parsed = JSON.parse(profile);
-      address = parsed.walletAddress || parsed.wallet;
-    }
-    // Fetch badges from localStorage (same as badges page)
-    badgeCount = milestones.filter(m => localStorage.getItem(`${address}-badge-${m.name}`) === 'minted').length;
-    stats[1].number = badgeCount;
+    // Get wallet address from signer
+    const signer = await getSigner();
+    const address = await signer.getAddress();
+    freelancerWallet = address;
+    // Fetch badges from Supabase
+    const { data: badgeData } = await supabase
+      .from('badges')
+      .select('badge_name')
+      .eq('user_address', address);
+    earnedBadges = badgeData ? badgeData.map(b => b.badge_name) : [];
+    stats[1].number = earnedBadges.length;
   }
   updateStats();
 });

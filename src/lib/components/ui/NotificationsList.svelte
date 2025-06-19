@@ -1,5 +1,5 @@
 <script lang="ts">
-import { getNotifications, markNotificationRead } from '$lib/utils/notifications';
+import { getNotifications as getNotificationsFromSupabase, markNotificationRead as markNotificationReadSupabase } from '$lib/utils/notifications.supabase';
 
 type Notification = {
 	id: string;
@@ -8,7 +8,7 @@ type Notification = {
 	read: boolean;
 };
 
-let notifications = $state<Notification[]>([]);
+let notifications = $state<any[]>([]);
 let userWallet = $state('');
 
 $effect(() => {
@@ -19,13 +19,18 @@ $effect(() => {
 		}
 	}
 	if (userWallet) {
-		notifications = getNotifications(userWallet);
+		// Call an async function, don't make the effect itself async
+		fetchNotifications();
 	}
 });
 
-function markRead(id: string) {
-	markNotificationRead(id);
-	notifications = getNotifications(userWallet);
+async function fetchNotifications() {
+	notifications = await getNotificationsFromSupabase(userWallet);
+}
+
+async function markRead(id: string) {
+	await markNotificationReadSupabase(id);
+	notifications = await getNotificationsFromSupabase(userWallet);
 }
 </script>
 

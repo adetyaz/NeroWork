@@ -3,7 +3,8 @@ import { getSigner, getAAWalletAddress } from '$lib/utils/aaUtils';
 import Toast from './ui/toast.svelte';
 import { onMount } from 'svelte';
 import NotificationsList from './ui/NotificationsList.svelte';
-import { getNotifications } from '$lib/utils/notifications';
+import { getNotifications as getNotificationsFromSupabase } from '$lib/utils/notifications.supabase';
+import { supabase } from '$lib/utils/supabaseClient';
 
 let isConnected = $state(false);
 let userAddress = $state('');
@@ -90,9 +91,13 @@ function disconnectWallet() {
 
 $effect(() => {
   if (userAddress) {
-    notifications = getNotifications(userAddress);
+    fetchNotifications();
   }
 });
+
+async function fetchNotifications() {
+  notifications = await getNotificationsFromSupabase(userAddress);
+}
 
 function toggleNotifications() {
   showNotifications = !showNotifications;
@@ -111,21 +116,38 @@ const defaultAvatar = '/freelancer.png'; // fallback avatar in static/design-ima
 
 let badgeImage = $state(defaultAvatar);
 
-$effect(() => {
-  if (!userAddress) {
+async function fetchUserBadges(address: string) {
+  if (!address) {
     badgeImage = defaultAvatar;
     return;
   }
-  // Find latest badge (highest milestone the user has minted)
+  // Fetch badges from Supabase
+  const { data: badgeData, error } = await supabase
+    .from('badges')
+    .select('badge_name')
+    .eq('user_address', address);
+  if (error) {
+    badgeImage = defaultAvatar;
+    return;
+  }
+  // Find the highest milestone badge the user has
   let latestBadge = null;
   for (let i = badgeMilestones.length - 1; i >= 0; i--) {
     const badge = badgeMilestones[i];
-    if (localStorage.getItem(`${userAddress}-badge-${badge.name}`) === 'minted') {
+    if (badgeData && badgeData.some(b => b.badge_name === badge.name)) {
       latestBadge = badge;
       break;
     }
   }
   badgeImage = latestBadge ? latestBadge.imageUrl : defaultAvatar;
+}
+
+$effect(() => {
+  if (userAddress) {
+    fetchUserBadges(userAddress);
+  } else {
+    badgeImage = defaultAvatar;
+  }
 });
 </script>
 

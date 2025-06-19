@@ -11,7 +11,7 @@ const milestones = [
 
 import { executeOperation, getSigner } from '$lib/utils/aaUtils';
 import { API_KEY } from '$lib/config';
-import { addNotification } from '$lib/utils/notifications';
+import { addNotification as addNotificationToSupabase } from '$lib/utils/notifications.supabase';
 import { supabase } from '$lib/utils/supabaseClient.js';
 
 let invoices: any[] = $state([]);
@@ -28,18 +28,23 @@ const BadgeNFTABI = [
   "function getBadgeInfo(uint256 tokenId) external view returns (string name, string description, string imageUrl)"
 ];
 
+// BADGE STATE FROM SUPABASE
 async function loadBadgesAndInvoices() {
   const signer = await getSigner();
   freelancerWallet = await signer.getAddress();
   // Load invoices for this user
-  const { data } = await supabase
+  const { data: invoiceData } = await supabase
     .from('invoices')
     .select('*')
     .eq('user_address', freelancerWallet);
-  invoices = data && Array.isArray(data) ? data : [];
+  invoices = invoiceData && Array.isArray(invoiceData) ? invoiceData : [];
   paidCount = invoices.filter(inv => inv.status === 'paid').length;
-  // Check which badges are minted
-  earnedBadges = milestones.filter(m => localStorage.getItem(`${freelancerWallet}-badge-${m.name}`) === 'minted').map(m => m.name);
+  // Load badges from Supabase (table: badges, fields: user_address, badge_name)
+  const { data: badgeData } = await supabase
+    .from('badges')
+    .select('badge_name')
+    .eq('user_address', freelancerWallet);
+  earnedBadges = badgeData ? badgeData.map(b => b.badge_name) : [];
   // Find the highest milestone reached but not minted
   mintableBadge = null;
   for (const m of milestones) {
@@ -67,16 +72,18 @@ async function mintBadge() {
       '',
       { apiKey: API_KEY }
     );
-    localStorage.setItem(`${freelancerWallet}-badge-${mintableBadge.name}`, 'minted');
-    addNotification({
+    // Save badge to Supabase
+    await supabase.from('badges').insert({ user_address: freelancerWallet, badge_name: mintableBadge.name });
+    // Add notification to Supabase
+    await addNotificationToSupabase({
       userWallet: freelancerWallet,
       type: 'badge',
-      message: `You earned the '${mintableBadge.name}' badge!`,
+      message: `You earned the '${mintableBadge.name}' badge!`
     });
     mintStatus = 'Badge minted!';
     await loadBadgesAndInvoices();
-  } catch (e) {
-    mintStatus = 'Mint failed.';
+  } catch (err) {
+    mintStatus = 'Mint failed';
   }
 }
 </script>

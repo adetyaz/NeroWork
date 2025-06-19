@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Menu, X, Star, Users, DollarSign, Clock, Award, Briefcase } from '@lucide/svelte';
+	import { Star, Users, DollarSign, Clock, Award, Briefcase } from '@lucide/svelte';
 
 	let walletAddress = $state('');
 	
@@ -15,6 +15,14 @@
 	
 	$effect(() => {
 		walletAddress = localStorage.getItem('connectedWallet') || '';
+		// Listen for wallet changes in other tabs/components
+		const onStorage = (e: StorageEvent) => {
+			if (e.key === 'connectedWallet') {
+				walletAddress = e.newValue || '';
+			}
+		};
+		window.addEventListener('storage', onStorage);
+		return () => window.removeEventListener('storage', onStorage);
 	});
 
 
