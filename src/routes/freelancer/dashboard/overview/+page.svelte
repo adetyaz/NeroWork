@@ -44,14 +44,10 @@ $effect(() => {
 
 $effect(() => {
   async function fetchInvoicesAndStats() {
-    // Get wallet address
-    let address = '';
-    const profile = localStorage.getItem('freelancerProfile');
-    if (profile) {
-      const parsed = JSON.parse(profile);
-      address = parsed.walletAddress || parsed.wallet;
-      freelancerWallet = address;
-    }
+    // Always get wallet address from getSigner
+    const signer = await getSigner();
+    const address = await signer.getAddress();
+    freelancerWallet = address;
     if (!address) return;
     // Fetch invoices from Supabase
     const { data } = await supabase
