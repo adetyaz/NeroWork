@@ -186,7 +186,7 @@ $effect(() => {
         </button>
         {#if showNotifications}
           <div class="absolute right-0 top-12 z-50">
-            <NotificationsList />
+            <NotificationsList userWallet={userAddress} />
           </div>
         {/if}
         <!-- Styled truncated wallet address -->

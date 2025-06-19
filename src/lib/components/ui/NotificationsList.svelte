@@ -1,6 +1,8 @@
 <script lang="ts">
 import { getNotifications as getNotificationsFromSupabase, markNotificationRead as markNotificationReadSupabase } from '$lib/utils/notifications.supabase';
 
+let { userWallet } = $props();
+
 type Notification = {
 	id: string;
 	message: string;
@@ -9,17 +11,9 @@ type Notification = {
 };
 
 let notifications = $state<any[]>([]);
-let userWallet = $state('');
 
 $effect(() => {
-	if (!userWallet) {
-		const profile = localStorage.getItem('freelancerProfile') || localStorage.getItem('clientProfile');
-		if (profile) {
-			userWallet = JSON.parse(profile).walletAddress || JSON.parse(profile).wallet;
-		}
-	}
 	if (userWallet) {
-		// Call an async function, don't make the effect itself async
 		fetchNotifications();
 	}
 });
