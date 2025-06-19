@@ -84,7 +84,7 @@ async function mintBadge() {
     txHash = result.transactionHash;
     status = 'Badge minted successfully!';
   } catch (error) {
-    status = 'Failed to mint badge: ' + (error?.message || error);
+    status = 'Failed to mint badge: ' + (error)
   } finally {
     loading = false;
   }

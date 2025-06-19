@@ -97,6 +97,36 @@ $effect(() => {
 function toggleNotifications() {
   showNotifications = !showNotifications;
 }
+
+// BADGE/AVATAR LOGIC
+const badgeMilestones = [
+  { count: 1, name: 'First Invoice', imageUrl: '/first-invoice.png.png' },
+  { count: 5, name: '5 Invoices', imageUrl: '/five-invoices.png.png' },
+  { count: 10, name: '10 Invoices', imageUrl: '/ten-invoices.png.jpg' },
+  { count: 25, name: '25 Invoices', imageUrl: '/twentyfive-invoices.png.jpg' },
+  { count: 50, name: '50 Invoices', imageUrl: '/fifty-invoices.png.jpg' },
+  { count: 100, name: '100 Invoices', imageUrl: '/hundred-invoices.png.jpg' }
+];
+const defaultAvatar = '/freelancer.png'; // fallback avatar in static/design-images/
+
+let badgeImage = $state(defaultAvatar);
+
+$effect(() => {
+  if (!userAddress) {
+    badgeImage = defaultAvatar;
+    return;
+  }
+  // Find latest badge (highest milestone the user has minted)
+  let latestBadge = null;
+  for (let i = badgeMilestones.length - 1; i >= 0; i--) {
+    const badge = badgeMilestones[i];
+    if (localStorage.getItem(`${userAddress}-badge-${badge.name}`) === 'minted') {
+      latestBadge = badge;
+      break;
+    }
+  }
+  badgeImage = latestBadge ? latestBadge.imageUrl : defaultAvatar;
+});
 </script>
 
 <div class="relative">
@@ -133,7 +163,7 @@ function toggleNotifications() {
           {/if}
         </button>
         {#if showNotifications}
-          <div class="absolute right-0 mt-2 z-50">
+          <div class="absolute right-0 top-12 z-50">
             <NotificationsList />
           </div>
         {/if}
@@ -141,7 +171,7 @@ function toggleNotifications() {
         <span class="px-3 py-1 bg-gray-100 rounded-full font-mono text-xs text-gray-700 border border-gray-300">{truncatedUserAddress}</span>
         <!-- Profile Image (Dropdown Trigger) -->
         <button onclick={toggleDropdown} class="h-9 w-9 overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-          <img src="https://placehold.co/36x36/cccccc/333333?text=P" alt="Profile" width="36" height="36" />
+          <img src={badgeImage} alt="Profile" width="36" height="36" />
         </button>
       </div>
     </div>

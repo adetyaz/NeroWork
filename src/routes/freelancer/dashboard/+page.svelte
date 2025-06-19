@@ -1,8 +1,10 @@
 <script lang="ts">
-
 import { goto } from '$app/navigation';
-let freelancerProfile: { full_name?: string; fullName?: string } | null = null;
-let walletAddress = '';
+
+
+let freelancerProfile: { full_name?: string; fullName?: string } | null = $state(null);
+let walletAddress = $state('');
+
 
 $effect(() => {
 	walletAddress = localStorage.getItem('connectedWallet') || '';
@@ -25,4 +27,4 @@ $effect(() => {
 		>
 	</div>
 </div>
-<!-- You can add invoice stats, recent invoices, and badges here as needed -->
+ 
