@@ -82,18 +82,12 @@
       <div class="relative">
         <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
           <img 
-            src="/placeholder.svg?height=400&width=600" 
+            src="https://images.pexels.com/photos/1766604/pexels-photo-1766604.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load" 
             alt="Team collaboration" 
             class="w-full h-96 object-cover"
           />
         </div>
-        <!-- Floating elements -->
-        <div class="absolute -top-4 -right-4 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-          ⭐ Top Rated
-        </div>
-        <div class="absolute -bottom-4 -left-4 bg-green-400 text-green-900 px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-          💼 1000+ Projects
-        </div>
+        
       </div>
     </div>
   </div>
