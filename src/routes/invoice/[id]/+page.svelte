@@ -46,9 +46,9 @@
         return;
       }
       const signer = await getSigner();
-      // Send native NERO (amount + 0.5 fee) to freelancer and platform
+      // Send native NERO (amount + 0.2 fee) to freelancer and platform
       const amountNero = ethers.utils.parseEther(invoice.amount.toString());
-      const feeNero = ethers.utils.parseEther('0.5');
+      const feeNero = ethers.utils.parseEther('0.2');
       // 1. Send to freelancer
       const tx1 = await signer.sendTransaction({
         to: invoice.user_address,
@@ -116,9 +116,9 @@
           <div class="bg-white text-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md">
             <h2 class="text-xl font-bold mb-4">Confirm Payment</h2>
             <div class="mb-2 flex justify-between"><span>Invoice Amount:</span><span>{formatCurrency(invoice.amount)}</span></div>
-            <div class="mb-2 flex justify-between"><span>Platform Fee:</span><span>0.5 NERO</span></div>
-            <div class="mb-4 flex justify-between font-bold text-lg"><span>Total to Pay:</span><span>{formatCurrency(invoice.amount + 0.5)}</span></div>
-            <div class="mb-2 text-xs text-gray-500">0.5 NERO will be sent to platform wallet:<br><span class="font-mono">{PLATFORM_WALLET}</span></div>
+            <div class="mb-2 flex justify-between"><span>Platform Fee:</span><span>0.2 NERO</span></div>
+            <div class="mb-4 flex justify-between font-bold text-lg"><span>Total to Pay:</span><span>{formatCurrency(invoice.amount + 0.2)}</span></div>
+            <div class="mb-2 text-xs text-gray-500">0.2 NERO will be sent to platform wallet:<br><span class="font-mono">{PLATFORM_WALLET}</span></div>
             <div class="flex gap-4 mt-6">
               <button type="button" class="bg-blue-600 text-white px-4 py-2 rounded" onclick={confirmPayNow} disabled={isPaying}>{isPaying ? 'Processing...' : 'Confirm & Pay'}</button>
               <button type="button" class="bg-gray-300 text-gray-800 px-4 py-2 rounded" onclick={closePayModal} disabled={isPaying}>Cancel</button>
