@@ -109,7 +109,7 @@
 							</svg>
 							Badges
 						</a>
-						<a
+						<!-- <a
 							href="/freelancer/dashboard/settings"
 							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/settings') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
 						>
@@ -131,7 +131,7 @@
 								></path>
 							</svg>
 							Settings
-						</a>
+						</a> -->
 					</nav>
 				</div>
 			</div>
