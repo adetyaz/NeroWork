@@ -2,8 +2,8 @@
   import { getSigner, mintNFT } from '../utils/aaUtils';
   import { API_KEY, NERO_CHAIN_CONFIG } from '../config';
 
-  let loading = false;
-  let txHash = '';
+  let loading = $state(false);
+  let txHash = $state('');
 
   const handleMint = async () => {
     try {
@@ -20,7 +20,7 @@
         signer,
         await signer.getAddress(), // Mint to the connected wallet
         metadataUri,
-        { apiKey: API_KEY }
+        0 // Replace 0 with the appropriate number if needed
       );
       
       txHash = result.transactionHash;

@@ -32,7 +32,7 @@ function markAsRead(id: string) {
             <div class="text-xs text-gray-500">{new Date(notif.createdAt).toLocaleString()}</div>
           </div>
           {#if !notif.read}
-            <button class="ml-4 px-3 py-1 bg-blue-600 text-white rounded text-xs" on:click={() => markAsRead(notif.id)}>Mark as Read</button>
+            <button class="ml-4 px-3 py-1 bg-blue-600 text-white rounded text-xs" onclick={() => markAsRead(notif.id)}>Mark as Read</button>
           {/if}
         </li>
       {/each}

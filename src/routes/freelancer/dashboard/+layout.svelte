@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 
 	let { children } = $props();
 
-	// Get the current path
-	let currentPath: string = $page.url.pathname;
+	// Get the current path reactively
+	let currentPath = $derived(page.url.pathname);
 
 	function isActive(path: string): boolean {
 		return currentPath === path;
@@ -108,6 +108,27 @@
 								<path d="M12 8v4l3 3"></path>
 							</svg>
 							Badges
+						</a>
+						<a
+							href="/freelancer/dashboard/reports"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/reports') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="mr-3"
+							>
+								<path d="M3 3v18h18"></path>
+								<path d="M7 12l3-3 3 3 5-5"></path>
+							</svg>
+							Reports
 						</a>
 						<!-- <a
 							href="/freelancer/dashboard/settings"

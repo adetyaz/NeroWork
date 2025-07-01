@@ -2,9 +2,11 @@ import tailwindcss from '@tailwindcss/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { defineConfig as defineVitestConfig } from 'vitest/config';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
-export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+export default defineVitestConfig({
+	plugins: [tailwindcss(), sveltekit(), nodePolyfills()],
 	test: {
 		workspace: [
 			{

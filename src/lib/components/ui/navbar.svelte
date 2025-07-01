@@ -1,11 +1,9 @@
 <script>
 	import AaWalletConnect from "../AAWalletConnect.svelte";
 	import { onMount } from 'svelte';
-	let walletAddress = '';
+	import { browser } from '$app/environment';
 	
-	onMount(() => {
-		walletAddress = localStorage.getItem('connectedWallet') || '';
-	});
+	let walletAddress = $state(browser ? localStorage.getItem('connectedWallet') || '' : '');
 </script>
 <header class="border-b border-gray-200 bg-white">
 	<div class="container mx-auto px-4 py-3">
