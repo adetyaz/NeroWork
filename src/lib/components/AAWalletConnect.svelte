@@ -7,6 +7,8 @@ import { getNotifications as getNotificationsFromSupabase } from '$lib/utils/not
 import { supabase } from '$lib/utils/supabaseClient';
 import { web3AuthStore } from '$lib/stores/web3AuthStore';
 import GaslessIndicator from './GaslessIndicator.svelte';
+import { ReferralService } from '$lib/services/referralService.js';
+import { page } from '$app/stores';
 
 let isConnected = $state(false);
 let userAddress = $state('');
@@ -23,6 +25,8 @@ let notifications = $state<any[]>([]);
 
 const truncatedUserAddress = $derived(truncateAddress(userAddress));
 const truncatedAAAddress = $derived(truncateAddress(aaWalletAddress));
+
+const referralService = ReferralService.getInstance();
 
 // Truncate address for display
 function truncateAddress(address: string): string {
@@ -98,6 +102,10 @@ async function connectWallet() {
     aaWalletAddress = aaAddress;
     localStorage.setItem('connectedAAWallet', aaAddress);
     isConnected = true;
+    
+    // Check for referral code and process if this is a new user
+    await processReferralIfPresent(address);
+    
     showToast = true;
     toastSuccess = true;
     toastMessage = 'Wallet connected successfully!';
@@ -116,6 +124,46 @@ async function connectWallet() {
     }, 3000); // Hide toast after 3 seconds
   } finally {
     isLoading = false;
+  }
+}
+
+// Process referral code if present in URL
+async function processReferralIfPresent(userAddress: string) {
+  try {
+    const referralCode = $page.url.searchParams.get('ref');
+    if (referralCode) {
+      console.log('Processing referral code:', referralCode);
+      
+      // Check if user is new (no existing invoices)
+      const { data: existingInvoices } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('user_address', userAddress.toLowerCase())
+        .limit(1);
+      
+      if (!existingInvoices || existingInvoices.length === 0) {
+        // New user - process referral
+        const success = await referralService.processReferralSignup(userAddress, referralCode);
+        
+        if (success) {
+          showToast = true;
+          toastSuccess = true;
+          toastMessage = '🎉 Referral applied! Your referrer will earn rewards when you become active.';
+          setTimeout(() => {
+            showToast = false;
+          }, 5000);
+          
+          // Remove referral code from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+          console.log('Referral code was invalid or already used');
+        }
+      } else {
+        console.log('Existing user - referral not applied');
+      }
+    }
+  } catch (error) {
+    console.error('Error processing referral:', error);
   }
 }
 

@@ -12,16 +12,14 @@
 </script>
 
 <div class="min-h-screen bg-[#f1f2f4]">
-	<!-- Header -->
-
 	<!-- Main Content -->
 	<div class="container mx-auto px-4 py-6">
-		<div class="flex flex-col gap-6 md:flex-row">
+		<div class="flex flex-col gap-6 md:flex-row min-h-screen">
 			<!-- Sidebar -->
-			<div class="w-full rounded-lg bg-white shadow-sm md:w-64">
+			<div class="w-full rounded-lg bg-white shadow-sm md:w-64 h-fit md:h-screen md:sticky md:top-6">
 				<div class="rounded-t-lg border-b border-gray-100 bg-gray-50 p-4">
 					<h2 class="text-xs font-semibold tracking-wider text-gray-500 uppercase">
-						CANDIDATE DASHBOARD
+						FREELANCER DASHBOARD
 					</h2>
 				</div>
 				<div class="p-2">
@@ -110,6 +108,46 @@
 							Badges
 						</a>
 						<a
+							href="/referrals"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/referrals') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="mr-3"
+							>
+								<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+							</svg>
+							Referrals
+						</a>
+						<a
+							href="/gas-sponsorship"
+							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/gas-sponsorship') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="18"
+								height="18"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="mr-3"
+							>
+								<path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+							</svg>
+							Gas Sponsorship
+						</a>
+						<a
 							href="/freelancer/dashboard/reports"
 							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/reports') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
 						>
@@ -130,34 +168,12 @@
 							</svg>
 							Reports
 						</a>
-						<!-- <a
-							href="/freelancer/dashboard/settings"
-							class="flex items-center rounded-md px-3 py-2.5 text-sm font-medium {isActive('/freelancer/dashboard/settings') ? 'bg-[#e7f0fa] text-[#0066ff]' : 'text-gray-700 hover:bg-gray-50'}"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="18"
-								height="18"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								class="mr-3"
-							>
-								<circle cx="12" cy="12" r="3"></circle>
-								<path
-									d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-								></path>
-							</svg>
-							Settings
-						</a> -->
+						
 					</nav>
 				</div>
 			</div>
 			<!-- Main Content -->
-			<div class="flex-1">
+			<div class="flex-1 min-h-0">
 				{@render children()}
 			</div>
 		</div>

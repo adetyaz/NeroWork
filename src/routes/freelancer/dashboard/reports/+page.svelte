@@ -19,6 +19,8 @@ $effect(() => {
       const signer = await getSigner();
       const address = await signer.getAddress();
       
+      console.log('Loading reports for address:', address);
+      
       const { data, error } = await supabase
         .from('invoices')
         .select('*')
@@ -29,10 +31,20 @@ $effect(() => {
       
       invoices = data || [];
       
-      // Calculate stats (handle legacy 'unpaid' status)
+      console.log(`Final result: Found ${invoices.length} invoices`);
+      console.log('Reports page loaded invoices:', invoices.map(inv => ({
+        id: inv.id,
+        project: inv.project_name,
+        status: inv.status,
+        user_address: inv.user_address,
+        chain_tx_hash: inv.chain_tx_hash,
+        has_tx_hash: !!inv.chain_tx_hash
+      })));
+      
+      // Calculate stats - use status field as primary source of truth
       stats.totalInvoices = invoices.length;
       stats.paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
-      stats.pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'unpaid' || !inv.status).length;
+      stats.pendingInvoices = invoices.filter(inv => inv.status === 'pending' || !inv.status).length;
       stats.rejectedInvoices = invoices.filter(inv => inv.status === 'rejected').length;
       stats.totalEarned = invoices
         .filter(inv => inv.status === 'paid')
@@ -55,9 +67,9 @@ function downloadCSV() {
       inv.id,
       `"${inv.project_name || 'Untitled'}"`,
       inv.amount,
-      inv.status,
+      inv.status || 'pending',
       new Date(inv.created_at).toLocaleDateString(),
-      inv.transaction_hash || 'N/A'
+      inv.chain_tx_hash || 'N/A'
     ].join(','))
   ].join('\n');
   
@@ -483,6 +495,9 @@ let hoveredIndex = $state(-1);
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                {#if stats.rejectedInvoices > 0}
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rejection Reason</th>
+                {/if}
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction</th>
               </tr>
@@ -499,28 +514,40 @@ let hoveredIndex = $state(-1);
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {invoice.status === 'paid' ? 'bg-green-100 text-green-800' : invoice.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">
-                      {#if invoice.status === 'pending' || invoice.status === 'unpaid' || !invoice.status}
-                        pending
-                      {:else}
-                        {invoice.status}
-                      {/if}
+                      {invoice.status || 'pending'}
                     </span>
                   </td>
+                  {#if stats.rejectedInvoices > 0}
+                    <td class="px-6 py-4">
+                      {#if invoice.status === 'rejected' && invoice.rejection_reason}
+                        <div class="max-w-xs">
+                          <div class="text-sm text-gray-900 truncate" title={invoice.rejection_reason}>
+                            {invoice.rejection_reason}
+                          </div>
+                        </div>
+                      {:else if invoice.status === 'rejected'}
+                        <span class="text-sm text-gray-500">No reason provided</span>
+                      {:else}
+                        <span class="text-sm text-gray-400">-</span>
+                      {/if}
+                    </td>
+                  {/if}
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(invoice.created_at).toLocaleDateString()}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {#if invoice.transaction_hash}
+                    {#if invoice.chain_tx_hash}
                       <a 
-                        href="https://testnet.neroscan.io/tx/{invoice.transaction_hash}" 
+                        href="https://testnet.neroscan.io/tx/{invoice.chain_tx_hash}" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         class="text-blue-600 hover:text-blue-800 underline"
+                        title="Invoice Creation Transaction"
                       >
-                        View on Explorer
+                        View Transaction
                       </a>
                     {:else}
-                      <span class="text-gray-400">Not available</span>
+                      <span class="text-gray-400">No transaction</span>
                     {/if}
                   </td>
                 </tr>

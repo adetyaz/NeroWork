@@ -18,6 +18,8 @@
 					{#if walletAddress}
 						<a href="/freelancer/dashboard" class="font-medium text-[#0066ff]"> Dashboard </a>
 						<a href="/freelancer/dashboard/create-invoice" class="text-gray-500 hover:text-gray-900">Create Invoice</a>
+						<a href="/referrals" class="text-gray-500 hover:text-gray-900">Referrals</a>
+						<a href="/gas-sponsorship" class="text-gray-500 hover:text-gray-900">Gas Sponsorship</a>
 					{/if}
 				</nav>
 			</div>

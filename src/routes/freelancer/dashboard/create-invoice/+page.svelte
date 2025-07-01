@@ -6,6 +6,7 @@
 	import { browser } from '$app/environment';
 	import TokenSelector from '$lib/components/TokenSelector.svelte';
 	import { selectedPaymentToken } from '$lib/stores/tokenStore';
+	import { DUE_DATE_OPTIONS } from '$lib/types/reminders';
 
 	let walletAddress = $state('');
 	let projectName = $state('');
@@ -13,6 +14,8 @@
 	let clientEmail = $state('');
 	let projectDescription = $state('');
 	let amount = $state('');
+	let dueDateDays = $state(30); // Default 30 days
+	let reminderEnabled = $state(true);
 	let isSubmitting = $state(false);
 	let error = $state('');
 	let success = $state(false);
@@ -23,7 +26,7 @@
 			try {
 				const signer = await getSigner();
 				const address = await signer.getAddress();
-				walletAddress = address.toLowerCase(); // Normalize to lowercase
+				walletAddress = address; // Keep original case from wallet
 			} catch (err) {
 				walletAddress = '';
 			}
@@ -72,6 +75,10 @@
 				{ apiKey: API_KEY }
 			);
 
+			// Calculate due date
+			const dueDate = new Date();
+			dueDate.setDate(dueDate.getDate() + dueDateDays);
+
 			// Save to Supabase
 			const invoiceData = {
 				project_name: projectName.trim(),
@@ -80,8 +87,11 @@
 				project_description: projectDescription.trim(),
 				amount: parseFloat(amount),
 				chain_tx_hash: result.transactionHash,
-				user_address: walletAddress.toLowerCase(), // Normalize to lowercase
-				status: 'pending' // Set default status to pending
+				user_address: walletAddress, // Keep original case from wallet
+				status: 'pending', // Set default status to pending
+				due_date: dueDate.toISOString(),
+				reminder_enabled: reminderEnabled,
+				reminder_count: 0
 			};
 
 			console.log('Creating invoice with wallet address:', walletAddress);
@@ -244,6 +254,40 @@
 							disabled={isSubmitting}
 							placeholder="Describe the work completed, deliverables, and any additional details..."
 						></textarea>
+					</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div>
+							<label for="dueDateDays" class="block text-sm font-medium text-gray-700 mb-2">Payment Due In</label>
+							<select 
+								id="dueDateDays"
+								class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+								bind:value={dueDateDays}
+								disabled={isSubmitting}
+							>
+								{#each DUE_DATE_OPTIONS as option}
+									<option value={option.value}>{option.label}</option>
+								{/each}
+							</select>
+							<p class="mt-1 text-xs text-gray-500">How many days the client has to pay after receiving the invoice</p>
+						</div>
+
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2">Payment Reminders</label>
+							<div class="flex items-center space-x-3">
+								<input 
+									id="reminderEnabled"
+									type="checkbox" 
+									class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+									bind:checked={reminderEnabled}
+									disabled={isSubmitting}
+								/>
+								<label for="reminderEnabled" class="text-sm text-gray-700">
+									Send automatic payment reminders
+								</label>
+							</div>
+							<p class="mt-1 text-xs text-gray-500">Automatically remind clients about overdue payments (7, 14, 30 days)</p>
+						</div>
 					</div>
 
 					<div class="flex items-center justify-between pt-4 border-t border-gray-200">

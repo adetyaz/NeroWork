@@ -69,7 +69,9 @@
 		"dotenv": "^17.0.0",
 		"ethers": "^5.7.2",
 		"jspdf": "^3.0.1",
+		"mailersend": "^2.6.0",
 		"process": "^0.11.10",
+		"resend": "^4.6.0",
 		"stream-browserify": "^3.0.0",
 		"userop": "github:nerochain/aa-userop-sdk",
 		"util": "^0.12.5"

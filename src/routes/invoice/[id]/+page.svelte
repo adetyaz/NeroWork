@@ -11,9 +11,13 @@
   import { selectedPaymentToken } from '$lib/stores/tokenStore';
   import { web3AuthStore } from '$lib/stores/web3AuthStore';
   import { paymasterService, paymasterStore } from '$lib/stores/paymasterStore';
+  import { paymentReminderService } from '$lib/services/paymentReminderService';
   import type { PaymentOption } from '$lib/types/tokens';
+  import type { PaymentReminder } from '$lib/types/reminders';
   import { ethers } from 'ethers';
   import jsPDF from 'jspdf';
+  import { ReferralService } from '$lib/services/referralService.js';
+  import { GasSponsorshipService } from '$lib/services/gasSponsorshipService.js';
 
   type Invoice = {
     id: string;
@@ -29,9 +33,15 @@
     paid_at?: string;
     rejected_at?: string;
     rejection_reason?: string;
+    due_date?: string;
+    reminder_enabled?: boolean;
+    reminder_count?: number;
+    last_reminder_sent?: string;
   };
   
   let invoice = $state<Invoice | null>(null);
+  let reminderHistory = $state<PaymentReminder[]>([]);
+  let showReminderHistory = $state(false);
   let isPaying = $state(false);
   let isRejecting = $state(false);
   let toast = $state({ open: false, message: '', success: false });
@@ -40,6 +50,9 @@
   let rejectionReason = $state('');
   let selectedToken = $derived($selectedPaymentToken);
   const PLATFORM_WALLET = '0x99BD4BDD7A9c22E2a35F09A6Bd17f038D5E5eB87';
+  
+  const referralService = ReferralService.getInstance();
+  const gasSponsorshipService = GasSponsorshipService.getInstance();
 
   function formatCurrency(amount: number) {
     if (selectedToken) {
@@ -79,12 +92,17 @@
         return;
       }
 
+      // Debug logging
+      console.log('Rejecting invoice with reason:', rejectionReason.trim());
+      console.log('Invoice ID:', invoice.id);
+
       // Update Supabase with rejection status
-      const { error: supabaseError } = await supabase.from('invoices').update({ 
+      const { data, error: supabaseError } = await supabase.from('invoices').update({ 
         status: 'rejected',
-        rejected_at: new Date().toISOString(),
         rejection_reason: rejectionReason.trim()
       }).eq('id', invoice.id);
+
+      console.log('Supabase update result:', { data, error: supabaseError });
 
       if (supabaseError) {
         throw new Error(supabaseError.message);
@@ -101,7 +119,6 @@
       invoice = { 
         ...invoice, 
         status: 'rejected', 
-        rejected_at: new Date().toISOString(),
         rejection_reason: rejectionReason.trim()
       };
       
@@ -198,6 +215,36 @@
         paid_at: new Date().toISOString()
       }).eq('id', invoice.id);
 
+      // Check and sponsor gas for client (if enabled by freelancer)
+      try {
+        const signerAddress = await signer.getAddress();
+        // Estimate gas fee for this transaction (approximate)
+        const estimatedGasFee = 0.001; // Rough estimate in NERO
+        
+        const gasSponsored = await gasSponsorshipService.sponsorGas(
+          invoice.user_address, // freelancer (sponsor)
+          signerAddress,       // client (being sponsored)
+          transactionHash,
+          estimatedGasFee,
+          invoice.id
+        );
+        
+        if (gasSponsored) {
+          console.log('✅ Gas was sponsored by freelancer for this payment');
+        }
+      } catch (gasSponsorshipError) {
+        console.log('Note: Gas sponsorship failed:', gasSponsorshipError);
+        // Don't fail the payment for gas sponsorship issues
+      }
+
+      // Check and complete referrals for the freelancer (if they were referred)
+      try {
+        await referralService.checkAndCompleteReferrals(invoice.user_address);
+      } catch (referralError) {
+        console.log('Note: Referral check failed:', referralError);
+        // Don't fail the payment for referral issues
+      }
+
       // 4. Notify freelancer
       addNotification({
         userWallet: invoice.user_address,
@@ -233,6 +280,8 @@
       
       if (data) {
         invoice = data;
+        // Load reminder history for this invoice
+        await loadReminderHistory(data.id);
         return;
       }
       
@@ -245,10 +294,53 @@
       
       if (data2) {
         invoice = data2;
+        // Load reminder history for this invoice
+        await loadReminderHistory(data2.id);
       }
     } catch (err) {
       // Silent fail - just don't load the invoice
     }
+  }
+
+  async function loadReminderHistory(invoiceId: string) {
+    try {
+      reminderHistory = await paymentReminderService.getReminderHistory(invoiceId);
+    } catch (error) {
+      console.error('Error loading reminder history:', error);
+      reminderHistory = [];
+    }
+  }
+
+  function getReminderTypeLabel(type: string): string {
+    switch (type) {
+      case 'first': return 'First Reminder';
+      case 'second': return 'Second Reminder'; 
+      case 'final': return 'Final Notice';
+      default: return 'Reminder';
+    }
+  }
+
+  function getReminderTypeColor(type: string): string {
+    switch (type) {
+      case 'first': return 'bg-blue-100 text-blue-800';
+      case 'second': return 'bg-yellow-100 text-yellow-800';
+      case 'final': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  function isOverdue(): boolean {
+    if (!invoice?.due_date) return false;
+    const now = new Date();
+    const dueDate = new Date(invoice.due_date);
+    return now > dueDate && invoice.status === 'pending';
+  }
+
+  function getDaysOverdue(): number {
+    if (!invoice?.due_date) return 0;
+    const now = new Date();
+    const dueDate = new Date(invoice.due_date);
+    return Math.max(0, Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
   }
 
   async function exportToPDF() {
@@ -606,6 +698,90 @@
         </div>
       </div>
     </div>
+
+    <!-- Payment Status and Due Date Info -->
+    {#if invoice.due_date}
+      <div class="mt-8 bg-gray-800 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-white mb-4">Payment Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <span class="text-gray-400">Due Date:</span>
+            <div class="text-white font-medium">{new Date(invoice.due_date).toLocaleDateString()}</div>
+          </div>
+          <div>
+            <span class="text-gray-400">Status:</span>
+            <div class="text-white font-medium">
+              {#if isOverdue()}
+                <span class="text-red-400">Overdue ({getDaysOverdue()} days)</span>
+              {:else if invoice.status === 'paid'}
+                <span class="text-green-400">Paid</span>
+              {:else if invoice.status === 'rejected'}
+                <span class="text-red-400">Rejected</span>
+              {:else}
+                <span class="text-yellow-400">Pending</span>
+              {/if}
+            </div>
+          </div>
+          <div>
+            <span class="text-gray-400">Reminders:</span>
+            <div class="text-white font-medium">
+              {#if invoice.reminder_enabled}
+                <span class="text-green-400">Enabled</span>
+                {#if invoice.reminder_count && invoice.reminder_count > 0}
+                  <span class="text-gray-400">({invoice.reminder_count} sent)</span>
+                {/if}
+              {:else}
+                <span class="text-gray-400">Disabled</span>
+              {/if}
+            </div>
+          </div>
+        </div>
+
+        <!-- Show rejection reason if invoice was rejected -->
+        {#if invoice.status === 'rejected'}
+          <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <h4 class="text-sm font-medium text-red-800 mb-2">Rejection Reason</h4>
+            <p class="text-sm text-red-700">
+              {invoice.rejection_reason || 'No reason provided by the client.'}
+            </p>
+          </div>
+        {/if}
+
+        <!-- Reminder History Toggle -->
+        {#if reminderHistory.length > 0}
+          <div class="mt-4 pt-4 border-t border-gray-700">
+            <button
+              type="button"
+              class="text-blue-400 hover:text-blue-300 text-sm font-medium"
+              onclick={() => showReminderHistory = !showReminderHistory}
+            >
+              {showReminderHistory ? 'Hide' : 'Show'} Reminder History ({reminderHistory.length})
+            </button>
+          </div>
+
+          {#if showReminderHistory}
+            <div class="mt-4 space-y-3">
+              {#each reminderHistory as reminder}
+                <div class="bg-gray-700 rounded-lg p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="inline-flex px-2 py-1 rounded-full text-xs font-medium {getReminderTypeColor(reminder.reminder_type)}">
+                      {getReminderTypeLabel(reminder.reminder_type)}
+                    </span>
+                    <span class="text-xs text-gray-400">
+                      {new Date(reminder.sent_at).toLocaleDateString()} at {new Date(reminder.sent_at).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div class="text-sm text-gray-300">
+                    <div class="font-medium mb-1">Subject: {reminder.subject}</div>
+                    <div class="text-xs text-gray-400">Sent to: {reminder.email_sent_to}</div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        {/if}
+      </div>
+    {/if}
   </div>
   <Toast open={toast.open} status={toast.message} success={toast.success} error={false} />
 </div>

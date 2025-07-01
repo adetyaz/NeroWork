@@ -1,4 +1,6 @@
 <script lang='ts'>
+ // @ts-ignore
+ /* eslint-disable a11y-click-events-have-key-events, a11y-no-static-element-interactions */
  let {open, onClose, children} = $props()
 </script>
 
@@ -9,10 +11,13 @@
   role="button"
   tabindex="0"
   onclick={onClose}
-  onkeydown={(e) => e.key === 'Enter' || e.key === ' ' ? onClose() : null}
+  onkeydown={(e) => e.key === 'Escape' ? onClose() : null}
   aria-label="dialog"
 >
-  <div class="text-white p-2 animate-fade-in grid place-items-center w-5/6">
+  <div 
+    class="text-white p-2 animate-fade-in grid place-items-center w-5/6"
+    onclick={(e) => e.stopPropagation()}
+  >
     {@render children()}
   </div>
 </div>
