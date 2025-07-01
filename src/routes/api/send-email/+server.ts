@@ -16,7 +16,7 @@ export async function POST({ request }) {
 		const resend = new Resend(resendApiKey);
 
 		const emailData = {
-			from: 'NeroWork <onboarding@resend.dev>', // Resend's default sender for testing
+			from: 'NeroWork <onboarding@resend.dev>', // Use Resend's default for now
 			to: [to],
 			subject,
 			html: formatEmailContent(content),
