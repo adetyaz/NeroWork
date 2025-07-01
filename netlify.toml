@@ -1,0 +1,16 @@
+# Netlify settings
+[build]
+  command = "npm run build"
+  publish = ".netlify"
+
+# Redirect all routes to index.html for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API routes should be handled by functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
