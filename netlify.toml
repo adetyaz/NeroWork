@@ -2,3 +2,14 @@
 [build]
   command = "npm run build"
   publish = ".netlify"
+
+# Explicitly disable auto-detected plugins
+[[plugins]]
+  package = "@netlify/plugin-emails"
+  
+  [plugins.inputs]
+    disabled = true
+
+# Build settings
+[build.environment]
+  NODE_VERSION = "18"
