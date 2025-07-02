@@ -11,22 +11,40 @@ declare global {
 
 	namespace NodeJS {
 		interface ProcessEnv {
-			MAILERSEND_API_KEY: string;
-			RESEND_API_KEY: string; // Legacy - deprecated
+			GMAIL_USER: string;
+			GMAIL_APP_PASSWORD: string;
+			MAILERSEND_API_KEY: string; // Deprecated
+			RESEND_API_KEY: string; // Deprecated
+			EMAILJS_PUBLIC_KEY: string; // Deprecated - doesn't work server-side
+			EMAILJS_PRIVATE_KEY: string; // Deprecated - doesn't work server-side
+			EMAILJS_SERVICE_ID: string; // Deprecated - doesn't work server-side
+			EMAILJS_TEMPLATE_ID: string; // Deprecated - doesn't work server-side
 		}
 	}
 }
 
 // Environmental variables type declarations
 declare module '$env/static/private' {
-	export const MAILERSEND_API_KEY: string;
-	export const RESEND_API_KEY: string; // Legacy - deprecated
+	export const GMAIL_USER: string;
+	export const GMAIL_APP_PASSWORD: string;
+	export const MAILERSEND_API_KEY: string; // Deprecated
+	export const RESEND_API_KEY: string; // Deprecated
+	export const EMAILJS_PUBLIC_KEY: string; // Deprecated - doesn't work server-side
+	export const EMAILJS_PRIVATE_KEY: string; // Deprecated - doesn't work server-side
+	export const EMAILJS_SERVICE_ID: string; // Deprecated - doesn't work server-side
+	export const EMAILJS_TEMPLATE_ID: string; // Deprecated - doesn't work server-side
 }
 
 declare module '$env/dynamic/private' {
 	export const env: {
-		MAILERSEND_API_KEY: string;
-		RESEND_API_KEY: string; // Legacy - deprecated
+		GMAIL_USER: string;
+		GMAIL_APP_PASSWORD: string;
+		MAILERSEND_API_KEY: string; // Deprecated
+		RESEND_API_KEY: string; // Deprecated
+		EMAILJS_PUBLIC_KEY: string; // Deprecated - doesn't work server-side
+		EMAILJS_PRIVATE_KEY: string; // Deprecated - doesn't work server-side
+		EMAILJS_SERVICE_ID: string; // Deprecated - doesn't work server-side
+		EMAILJS_TEMPLATE_ID: string; // Deprecated - doesn't work server-side
 		[key: string]: string | undefined;
 	};
 }

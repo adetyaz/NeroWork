@@ -2,7 +2,7 @@
 	import { Star, Users, DollarSign, Clock, Award, Briefcase, Shield, Zap, TrendingUp, CheckCircle, ArrowRight, Play } from '@lucide/svelte';
 	import AAWalletConnect from '$lib/components/AAWalletConnect.svelte';
 
-	let walletAddress = $state('');
+	let walletConnected = $state(false);
 	
 	let features = $state([
 		{ icon: Clock, title: 'Instant Payouts', description: 'Get paid instantly in NERO for your work', highlight: 'No delays' },
@@ -13,36 +13,7 @@
 		{ icon: Zap, title: 'Gasless Withdrawals', description: 'No gas fees when withdrawing', highlight: 'Powered by NERO' }
 	]);
 
-	let testimonials = $state([
-		{
-			name: "Sarah Chen",
-			role: "Web3 Developer",
-			avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-			content: "NeroWork has transformed how I handle client payments. Instant NERO payouts and zero platform fees mean I keep more of what I earn.",
-			rating: 5
-		},
-		{
-			name: "Marcus Rodriguez",
-			role: "Blockchain Designer",
-			avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-			content: "The NFT badge system is genius. My reputation NFTs have helped me land bigger projects and showcase my expertise to clients.",
-			rating: 5
-		},
-		{
-			name: "Alex Thompson",
-			role: "Smart Contract Auditor",
-			avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-			content: "Professional invoicing on-chain with transaction transparency. Clients love the accountability and I love the efficiency.",
-			rating: 5
-		}
-	]);
-
-	let stats = $state([
-		{ number: "10K+", label: "Invoices Created", icon: Briefcase },
-		{ number: "500+", label: "Active Freelancers", icon: Users },
-		{ number: "₦2.5M", label: "Total Paid Out", icon: DollarSign },
-		{ number: "99.9%", label: "Uptime", icon: TrendingUp }
-	]);
+	let stats = $state([]);
 
 	let howItWorks = $state([
 		{
@@ -72,11 +43,11 @@
 	]);
 	
 	$effect(() => {
-		walletAddress = localStorage.getItem('connectedWallet') || '';
+		walletConnected = localStorage.getItem('connectedWallet') !== null;
 		// Listen for wallet changes in other tabs/components
 		const onStorage = (e: StorageEvent) => {
 			if (e.key === 'connectedWallet') {
-				walletAddress = e.newValue || '';
+				walletConnected = e.newValue !== null;
 			}
 		};
 		window.addEventListener('storage', onStorage);
@@ -109,19 +80,9 @@
 					</p>
 				</div>
 
-				<!-- Stats -->
-				<div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-					{#each stats as stat}
-						<div class="text-center">
-							<div class="text-3xl md:text-4xl font-bold text-white">{stat.number}</div>
-							<div class="text-gray-400 text-sm">{stat.label}</div>
-						</div>
-					{/each}
-				</div>
-
 				<!-- CTA Buttons -->
 				<div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-					{#if walletAddress}
+					{#if walletConnected}
 						<a
 							href="/freelancer/dashboard/create-invoice"
 							class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 flex items-center gap-2"
@@ -130,9 +91,7 @@
 							<ArrowRight class="w-5 h-5" />
 						</a>
 					{:else}
-						<div class="wallet-connect-wrapper">
-							<AAWalletConnect />
-						</div>
+						<AAWalletConnect bind:isConnected={walletConnected} />
 					{/if}
 					<button 
 						onclick={() => document.getElementById('demo-video')?.scrollIntoView({behavior: 'smooth'})}
@@ -144,7 +103,7 @@
 				</div>
 
 				<p class="text-gray-400 text-sm">
-					💎 Join 500+ freelancers already earning on NeroWork
+					💎 Join freelancers already earning on NeroWork
 				</p>
 			</div>
 		</div>
@@ -275,51 +234,6 @@
 		</div>
 	</section>
 
-	<!-- Testimonials Section -->
-	<section class="py-24 bg-white">
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-			<div class="text-center mb-16">
-				<h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-					Loved by Freelancers
-				</h2>
-				<p class="text-xl text-gray-600 max-w-3xl mx-auto">
-					See what our community is saying about their NeroWork experience
-				</p>
-			</div>
-
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-				{#each testimonials as testimonial}
-					<div class="bg-gray-50 rounded-2xl p-8 hover:bg-gray-100 transition-colors duration-300">
-						<!-- Rating -->
-						<div class="flex mb-4">
-							{#each Array(testimonial.rating) as _}
-								<Star class="w-5 h-5 text-yellow-400 fill-current" />
-							{/each}
-						</div>
-						
-						<!-- Content -->
-						<blockquote class="text-gray-700 mb-6 leading-relaxed">
-							"{testimonial.content}"
-						</blockquote>
-						
-						<!-- Author -->
-						<div class="flex items-center">
-							<img 
-								src={testimonial.avatar} 
-								alt={testimonial.name}
-								class="w-12 h-12 rounded-full mr-4 object-cover"
-							/>
-							<div>
-								<div class="font-semibold text-gray-900">{testimonial.name}</div>
-								<div class="text-gray-600 text-sm">{testimonial.role}</div>
-							</div>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-	</section>
-
   <!-- CTA Section -->
   <section class="bg-gradient-to-r from-blue-600 to-purple-700 py-20">
     <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
@@ -330,7 +244,7 @@
         Be part of the freelance community shaping the future of work
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        {#if walletAddress}
+        {#if walletConnected}
           <a
             href="/freelancer/dashboard/create-invoice"
             class="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors shadow-lg"
@@ -338,9 +252,7 @@
             Get Started
           </a>
         {:else}
-          <div class="wallet-connect-wrapper">
-            <AAWalletConnect />
-          </div>
+          <AAWalletConnect bind:isConnected={walletConnected} />
         {/if}
         <a
           href="#demo-video"
@@ -423,28 +335,4 @@
   </footer>
 </main>
 
-<style>
-  :global(.wallet-connect-wrapper button) {
-    background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
-    color: white;
-    padding: 1rem 2rem;
-    border-radius: 0.75rem;
-    font-size: 1.125rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    border: none;
-    cursor: pointer;
-  }
-  
-  :global(.wallet-connect-wrapper button:hover) {
-    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-    box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.25);
-  }
-  
-  :global(.wallet-connect-wrapper .connect-button) {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-</style>
+

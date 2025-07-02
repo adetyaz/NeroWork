@@ -13,10 +13,17 @@
   onclick={onClose}
   onkeydown={(e) => e.key === 'Escape' ? onClose() : null}
   aria-label="dialog"
->
-  <div 
+>  <div
     class="text-white p-2 animate-fade-in grid place-items-center w-5/6"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
     onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => {
+      if (e.key === 'Escape') {
+        onClose?.();
+      }
+    }}
   >
     {@render children()}
   </div>

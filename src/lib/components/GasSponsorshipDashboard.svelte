@@ -561,7 +561,9 @@ function getBudgetBarColor(percentage: number): string {
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <a 
-                      href="#" 
+                      href="https://testnet.neroscan.io/tx/{sponsorship.transaction_hash}" 
+                      target="_blank"
+                      rel="noopener noreferrer"
                       class="text-blue-600 hover:text-blue-900 text-sm"
                     >
                       {sponsorship.transaction_hash.slice(0, 10)}...

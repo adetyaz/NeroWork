@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Wallet, CreditCard, ArrowRight, Check } from 'lucide-svelte';
+	import { Wallet, CreditCard, ArrowRight, Check } from '@lucide/svelte';
 
 	let currentStep = $state(1);
 	let selectedToken = $state('USDC');
@@ -97,8 +97,9 @@
 	{#if currentStep === 1}
 		<div class="space-y-6">
 			<div>
-				<label class="mb-2 block text-sm font-medium text-gray-300">Select Token</label>
+				<label for="token-select" class="mb-2 block text-sm font-medium text-gray-300">Select Token</label>
 				<select 
+					id="token-select"
 					bind:value={selectedToken}
 					class="w-full rounded-lg bg-gray-800 p-3 text-white border border-gray-600 focus:border-purple-500 focus:outline-none"
 				>
@@ -109,8 +110,9 @@
 			</div>
 
 			<div>
-				<label class="mb-2 block text-sm font-medium text-gray-300">Amount</label>
+				<label for="amount-input" class="mb-2 block text-sm font-medium text-gray-300">Amount</label>
 				<input 
+					id="amount-input"
 					type="number"
 					bind:value={withdrawAmount}
 					placeholder="Enter amount"

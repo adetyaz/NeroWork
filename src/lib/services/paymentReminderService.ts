@@ -1,4 +1,5 @@
 import { supabase } from '../utils/supabaseClient.js';
+import { APP_CONFIG } from '../config.js';
 import type {
 	PaymentReminder,
 	InvoiceReminderSettings,
@@ -117,7 +118,7 @@ export class PaymentReminderService {
 			amount: invoice.amount.toString(),
 			token: 'NERO', // You can make this dynamic later
 			due_date: dueDate.toLocaleDateString(),
-			invoice_link: `https://nerowork.netlify.app/invoice/${invoice.id}`,
+			invoice_link: `${APP_CONFIG.baseUrl}/invoice/${invoice.id}`,
 			freelancer_name: invoice.client_name || 'Your Freelancer'
 		});
 
@@ -131,6 +132,64 @@ export class PaymentReminderService {
 		});
 
 		// Record the reminder
+		await this.recordReminder({
+			invoice_id: invoice.id,
+			reminder_type: reminderStage,
+			sent_at: now.toISOString(),
+			email_sent_to: invoice.client_email,
+			subject,
+			content
+		});
+
+		// Update invoice reminder count
+		await supabase
+			.from('invoices')
+			.update({
+				reminder_count: (invoice.reminder_count || 0) + 1,
+				last_reminder_sent: now.toISOString()
+			})
+			.eq('id', invoice.id);
+	}
+
+	/**
+	 * Send a manual reminder for a specific invoice (bypasses auto-reminder restrictions)
+	 */
+	async sendManualReminder(invoice: any): Promise<void> {
+		const now = new Date();
+		const dueDate = new Date(invoice.due_date);
+		const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+
+		// For manual reminders, determine the appropriate stage but allow even if not overdue
+		let reminderStage: 'first' | 'second' | 'final' = 'first';
+		if (daysOverdue >= 30) reminderStage = 'final';
+		else if (daysOverdue >= 14) reminderStage = 'second';
+		else if (daysOverdue >= 7) reminderStage = 'first';
+
+		// Get freelancer preferences for custom templates
+		const preferences = await this.getFreelancerPreferences(invoice.user_address);
+		const template = this.getTemplate(reminderStage, preferences);
+
+		// Replace template variables
+		const content = this.replaceTemplateVariables(template, {
+			project_name: invoice.project_name,
+			days_overdue: Math.max(0, daysOverdue).toString(),
+			amount: invoice.amount.toString(),
+			token: 'NERO',
+			due_date: dueDate.toLocaleDateString(),
+			invoice_link: `${APP_CONFIG.baseUrl}/invoice/${invoice.id}`,
+			freelancer_name: invoice.client_name || 'Your Freelancer'
+		});
+
+		const subject = this.getSubject(reminderStage, invoice.project_name, daysOverdue);
+
+		// Send email
+		await this.sendEmail({
+			to: invoice.client_email,
+			subject,
+			content
+		});
+
+		// Record the manual reminder
 		await this.recordReminder({
 			invoice_id: invoice.id,
 			reminder_type: reminderStage,

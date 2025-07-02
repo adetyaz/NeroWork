@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 // @ts-expect-error - SvelteKit environment module
 import { env } from '$env/dynamic/private';
 
@@ -7,40 +7,47 @@ export async function POST({ request }) {
 	try {
 		const { to, subject, content } = await request.json();
 
-		const resendApiKey = env.RESEND_API_KEY;
-		if (!resendApiKey) {
-			console.error('RESEND_API_KEY not found in environment variables');
+		// Gmail SMTP configuration
+		const gmailUser = env.GMAIL_USER;
+		const gmailPassword = env.GMAIL_APP_PASSWORD; // Use App Password, not regular password
+
+		if (!gmailUser || !gmailPassword) {
+			console.error('Gmail configuration missing');
 			return json({ error: 'Email service not configured' }, { status: 500 });
 		}
 
-		const resend = new Resend(resendApiKey);
+		// Create transporter
+		const transporter = nodemailer.createTransport({
+			service: 'gmail',
+			auth: {
+				user: gmailUser,
+				pass: gmailPassword
+			}
+		});
 
-		const emailData = {
-			from: 'NeroWork <onboarding@resend.dev>', // Use Resend's default for now
-			to: [to],
-			subject,
-			html: formatEmailContent(content),
-			text: content
+		// Email options
+		const mailOptions = {
+			from: `"NeroWork" <${gmailUser}>`,
+			to: to,
+			subject: subject,
+			text: content,
+			html: formatEmailContent(content)
 		};
 
-		console.log('📧 Sending reminder email via Resend:', { to, subject });
+		console.log('📧 Sending email via Gmail:', { to, subject });
 
-		const result = await resend.emails.send(emailData);
+		// Send email
+		const result = await transporter.sendMail(mailOptions);
 
-		if (result.error) {
-			console.error('Resend email error:', result.error);
-			return json({ error: result.error.message }, { status: 500 });
-		}
-
-		console.log('✅ Email sent successfully:', result.data?.id);
+		console.log('✅ Email sent successfully:', result.messageId);
 
 		return json({
 			success: true,
-			messageId: result.data?.id
+			messageId: result.messageId
 		});
 	} catch (error) {
 		console.error('Error sending email:', error);
-		return json({ error: 'Failed to send email' }, { status: 500 });
+		return json({ error: 'Failed to send email: ' + error.message }, { status: 500 });
 	}
 }
 

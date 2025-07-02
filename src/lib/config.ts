@@ -23,3 +23,7 @@ export const CONTRACT_ADDRESSES = {
 
 // Your API key from the NERO Chain AA Platform
 export const API_KEY: string = PUBLIC_NERO_API_KEY ?? '';
+
+export const APP_CONFIG = {
+	baseUrl: 'https://nerowork.up.railway.app' // Update this to your actual Railway URL
+};

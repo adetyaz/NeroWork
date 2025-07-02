@@ -1,7 +1,7 @@
 <script lang="ts">
 import { supabase } from '$lib/utils/supabaseClient.js';
 import { getSigner } from '$lib/utils/aaUtils';
-import { API_KEY } from '$lib/config';
+import { APP_CONFIG } from '$lib/config';
 import { addNotification } from '$lib/utils/notifications';
 import { PaymentReminderService } from '$lib/services/paymentReminderService.js';
 import type { PaymentReminder } from '$lib/types/reminders.js';
@@ -92,21 +92,52 @@ async function toggleReminders(invoice: any) {
 
 async function sendManualReminder(invoice: any) {
   try {
-    await reminderService.sendReminder(invoice);
+    await reminderService.sendManualReminder(invoice);
     
     // Reload invoices to get updated reminder count
     await loadInvoicesData();
     
     addNotification({
       type: 'success',
-      message: 'Reminder sent successfully',
+      message: 'Manual reminder sent successfully!',
       userWallet: freelancerWallet
     });
   } catch (error) {
     console.error('Error sending manual reminder:', error);
     addNotification({
       type: 'error',
-      message: 'Failed to send reminder',
+      message: 'Failed to send manual reminder: ' + (error instanceof Error ? error.message : String(error)),
+      userWallet: freelancerWallet
+    });
+  }
+}
+
+async function checkReminders() {
+  try {
+    console.log('Checking and sending payment reminders...');
+    
+    addNotification({
+      type: 'info',
+      message: 'Checking for overdue invoices...',
+      userWallet: freelancerWallet
+    });
+    
+    await reminderService.checkAndSendReminders();
+    
+    addNotification({
+      type: 'success',
+      message: 'Payment reminder check completed!',
+      userWallet: freelancerWallet
+    });
+    
+    // Reload invoices to see updated reminder counts
+    await loadInvoicesData();
+    
+  } catch (error) {
+    console.error('Error checking reminders:', error);
+    addNotification({
+      type: 'error',
+      message: 'Failed to check reminders: ' + (error instanceof Error ? error.message : String(error)),
       userWallet: freelancerWallet
     });
   }
@@ -197,70 +228,21 @@ async function loadInvoicesData() {
 }
 
 function getInvoiceLink(id: string) {
-  return `https://nerowork.netlify.app/invoice/${id}`;
+  return `${APP_CONFIG.baseUrl}/invoice/${id}`;
 }
 
-async function testEmailSending() {
-  try {
-    console.log('Testing email sending...');
-    
-    const response = await fetch('/api/send-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        to: 'illtiger3m@gmail.com', // Your email for testing
-        subject: 'Test Email from NeroWork',
-        content: `Hello!
-
-This is a test email from the NeroWork payment reminder system.
-
-**Test Details:**
-- Sent at: ${new Date().toLocaleString()}
-- From: Payment Reminder System
-- Purpose: Testing email integration
-
-Best regards,
-NeroWork Team`
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to send test email');
-    }
-
-    const result = await response.json();
-    
-    addNotification({
-      type: 'success',
-      message: 'Test email sent successfully!',
-      userWallet: freelancerWallet
-    });
-    
-    console.log('✅ Test email sent:', result.messageId);
-    
-  } catch (error) {
-    console.error('Error sending test email:', error);
-    addNotification({
-      type: 'error',
-      message: 'Failed to send test email: ' + (error instanceof Error ? error.message : String(error)),
-      userWallet: freelancerWallet
-    });
-  }
-}
 </script>
 
 <div class="space-y-6">
   <div class="flex items-center justify-between">
     <h1 class="text-2xl font-bold text-gray-900">My Invoices</h1>
     <div class="flex space-x-2">
+    
       <button 
-        onclick={testEmailSending}
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+        onclick={checkReminders}
+        class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
       >
-        Test Email
+        Check Reminders
       </button>
       <a 
         href="/freelancer/dashboard/create-invoice"
@@ -393,14 +375,13 @@ NeroWork Team`
                     >
                       {inv.reminder_enabled ? 'Disable' : 'Enable'} Reminders
                     </button>
-                    {#if inv.reminder_enabled && status.text.includes('overdue')}
-                      <button 
-                        onclick={() => sendManualReminder(inv)}
-                        class="text-orange-600 hover:text-orange-900"
-                      >
-                        Send Reminder
-                      </button>
-                    {/if}
+                    <button 
+                      onclick={() => sendManualReminder(inv)}
+                      class="text-orange-600 hover:text-orange-900"
+                      title="Send a payment reminder email now"
+                    >
+                      Send Reminder
+                    </button>
                     <button 
                       class="text-green-600 hover:text-green-900" 
                       onclick={() => navigator.clipboard.writeText(getInvoiceLink(inv.id))}

@@ -60,6 +60,7 @@
 		"vitest": "^3.0.0"
 	},
 	"dependencies": {
+		"@emailjs/nodejs": "^5.0.2",
 		"@fontsource-variable/dm-sans": "^5.2.5",
 		"@lucide/svelte": "^0.511.0",
 		"@supabase/supabase-js": "^2.49.4",
@@ -72,9 +73,8 @@
 		"dotenv": "^17.0.0",
 		"ethers": "^5.7.2",
 		"jspdf": "^3.0.1",
-		"mailersend": "^2.6.0",
+		"nodemailer": "^7.0.4",
 		"process": "^0.11.10",
-		"resend": "^4.6.0",
 		"stream-browserify": "^3.0.0",
 		"userop": "github:nerochain/aa-userop-sdk",
 		"util": "^0.12.5"

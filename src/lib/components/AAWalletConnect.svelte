@@ -8,9 +8,9 @@ import { supabase } from '$lib/utils/supabaseClient';
 import { web3AuthStore } from '$lib/stores/web3AuthStore';
 import GaslessIndicator from './GaslessIndicator.svelte';
 import { ReferralService } from '$lib/services/referralService.js';
-import { page } from '$app/stores';
+import { page } from '$app/state';
 
-let isConnected = $state(false);
+let { isConnected = $bindable(false) } = $props();
 let userAddress = $state('');
 let aaWalletAddress = $state('');
 let isLoading = $state(false);
@@ -116,7 +116,7 @@ async function connectWallet() {
   } catch (error) {
     console.error('Error connecting wallet:', error);
     showToast = true;
-    toastMessage = 'Failed to connect wallet'
+    toastMessage = 'Failed to connect wallet';
     toastError = true;
 
     setTimeout(() => {
@@ -130,7 +130,7 @@ async function connectWallet() {
 // Process referral code if present in URL
 async function processReferralIfPresent(userAddress: string) {
   try {
-    const referralCode = $page.url.searchParams.get('ref');
+    const referralCode = page.url.searchParams.get('ref');
     if (referralCode) {
       console.log('Processing referral code:', referralCode);
       
@@ -246,18 +246,18 @@ $effect(() => {
       <!-- Traditional Wallet Connect -->
       <button
         onclick={connectWallet}
-        class="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-md hover:bg-blue-700 transition duration-200 ease-in-out flex items-center justify-center {isLoading ? 'opacity-70 cursor-not-allowed' : ''}"
+        class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 flex items-center gap-2 {isLoading ? 'opacity-70 cursor-not-allowed' : ''}"
         disabled={isLoading}
       >
         {#if isLoading}
           <!-- Loading Spinner -->
-          <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           Connecting...
         {:else}
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
           Connect Wallet
@@ -360,9 +360,5 @@ $effect(() => {
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  .animate-slide-in {
-    animation: slide-in 0.2s ease-out;
   }
 </style>

@@ -1,9 +1,8 @@
-<script>
+<script lang='ts'>
 	import AaWalletConnect from "../AAWalletConnect.svelte";
-	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
 	
-	let walletAddress = $state(browser ? localStorage.getItem('connectedWallet') || '' : '');
+	// Simple approach - we'll use a shared reactive variable
+	let isWalletConnected = $state(false);
 </script>
 <header class="border-b border-gray-200 bg-white">
 	<div class="container mx-auto px-4 py-3">
@@ -15,7 +14,7 @@
 				</a>
 				<nav class="hidden items-center space-x-6 md:flex">
 					<a href="/" class="text-gray-500 hover:text-gray-900"> Home </a>
-					{#if walletAddress}
+					{#if isWalletConnected}
 						<a href="/freelancer/dashboard" class="font-medium text-[#0066ff]"> Dashboard </a>
 						<a href="/freelancer/dashboard/create-invoice" class="text-gray-500 hover:text-gray-900">Create Invoice</a>
 						<a href="/referrals" class="text-gray-500 hover:text-gray-900">Referrals</a>
@@ -23,7 +22,7 @@
 					{/if}
 				</nav>
 			</div>
-			<AaWalletConnect />
+			<AaWalletConnect bind:isConnected={isWalletConnected} />
 		</div>
 		<div class="mt-4 md:hidden">
 			<div class="flex items-center space-x-4">

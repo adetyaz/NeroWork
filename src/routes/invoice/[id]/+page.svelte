@@ -18,6 +18,14 @@
   import jsPDF from 'jspdf';
   import { ReferralService } from '$lib/services/referralService.js';
   import { GasSponsorshipService } from '$lib/services/gasSponsorshipService.js';
+  import { TokenSwapService } from '$lib/services/tokenSwapService.js';
+  import { InvoicePaymentService } from '$lib/services/invoicePaymentService.js';
+  import type { SwapQuote } from '$lib/services/tokenSwapService';
+  import TokenConversionNotice from '$lib/components/TokenConversionNotice.svelte';
+  import GasSponsorshipStatus from '$lib/components/GasSponsorshipStatus.svelte';
+  import PaymentBreakdown from '$lib/components/PaymentBreakdown.svelte';
+  import { API_KEY } from '$lib/config';
+  import { onMount } from 'svelte';
 
   type Invoice = {
     id: string;
@@ -37,6 +45,7 @@
     reminder_enabled?: boolean;
     reminder_count?: number;
     last_reminder_sent?: string;
+    preferred_token?: string; // Token the freelancer prefers to receive
   };
   
   let invoice = $state<Invoice | null>(null);
@@ -49,10 +58,98 @@
   let showRejectModal = $state(false);
   let rejectionReason = $state('');
   let selectedToken = $derived($selectedPaymentToken);
+  let gasSponsorshipAvailable = $state(false);
+  let currentClientAddress = $state('');
+  let swapQuote = $state<SwapQuote | null>(null);
+  let isLoadingQuote = $state(false);
+  let needsConversion = $derived(
+    selectedToken && invoice?.preferred_token && 
+    selectedToken.symbol !== invoice.preferred_token
+  );
   const PLATFORM_WALLET = '0x99BD4BDD7A9c22E2a35F09A6Bd17f038D5E5eB87';
   
   const referralService = ReferralService.getInstance();
   const gasSponsorshipService = GasSponsorshipService.getInstance();
+  const tokenSwapService = TokenSwapService.getInstance();
+  const paymentService = InvoicePaymentService.getInstance();
+
+  // Check gas sponsorship availability when client connects
+  async function checkGasSponsorshipStatus() {
+    try {
+      if (!invoice || !currentClientAddress) return;
+      
+      const eligibility = await gasSponsorshipService.checkGasSponsorshipEligibility(
+        invoice.user_address,
+        currentClientAddress
+      );
+      
+      gasSponsorshipAvailable = eligibility?.gas_sponsorship_enabled || false;
+      console.log('Gas sponsorship available:', gasSponsorshipAvailable);
+    } catch (error) {
+      console.log('Could not check gas sponsorship:', error);
+      gasSponsorshipAvailable = false;
+    }
+  }
+
+  // Update current client address when wallet connects
+  async function updateClientAddress() {
+    try {
+      const signer = await getSigner();
+      currentClientAddress = await signer.getAddress();
+      await checkGasSponsorshipStatus();
+    } catch (error) {
+      console.log('Could not get client address:', error);
+      currentClientAddress = '';
+      gasSponsorshipAvailable = false;
+    }
+  }
+
+  // Get conversion quote when token selection changes
+  async function updateConversionQuote() {
+    if (!needsConversion || !selectedToken || !invoice?.preferred_token) {
+      swapQuote = null;
+      return;
+    }
+
+    isLoadingQuote = true;
+    try {
+      // Find the target token that the freelancer wants
+      const { SUPPORTED_PAYMENT_TOKENS } = await import('$lib/types/tokens');
+      const targetToken = SUPPORTED_PAYMENT_TOKENS.find(t => t.symbol === invoice?.preferred_token);
+      
+      if (!targetToken) {
+        console.error('Target token not found:', invoice.preferred_token);
+        swapQuote = null;
+        return;
+      }
+
+      // Get swap quote
+      const quote = await tokenSwapService.getSwapQuote(
+        selectedToken,
+        targetToken,
+        invoice.amount.toString()
+      );
+
+      swapQuote = quote;
+      console.log('Conversion quote:', quote);
+    } catch (error) {
+      console.error('Error getting conversion quote:', error);
+      swapQuote = null;
+    } finally {
+      isLoadingQuote = false;
+    }
+  }
+
+  // Watch for token selection changes to update conversion quote
+  $effect(() => {
+    updateConversionQuote();
+  });
+  
+  // Load invoice data when component mounts
+  onMount(async () => {
+    await loadInvoice();
+    console.log('Invoice loaded:', invoice);
+  });
 
   function formatCurrency(amount: number) {
     if (selectedToken) {
@@ -63,6 +160,8 @@
 
   function openPayModal() {
     showPayModal = true;
+    // Update client address and check gas sponsorship when opening payment modal
+    updateClientAddress();
   }
   function closePayModal() {
     showPayModal = false;
@@ -96,10 +195,15 @@
       console.log('Rejecting invoice with reason:', rejectionReason.trim());
       console.log('Invoice ID:', invoice.id);
 
+      // Get current date for rejection timestamp
+      const now = new Date().toISOString();
+      const cleanReason = rejectionReason.trim();
+
       // Update Supabase with rejection status
       const { data, error: supabaseError } = await supabase.from('invoices').update({ 
         status: 'rejected',
-        rejection_reason: rejectionReason.trim()
+        rejection_reason: cleanReason,
+        rejected_at: now
       }).eq('id', invoice.id);
 
       console.log('Supabase update result:', { data, error: supabaseError });
@@ -119,8 +223,12 @@
       invoice = { 
         ...invoice, 
         status: 'rejected', 
-        rejection_reason: rejectionReason.trim()
+        rejection_reason: rejectionReason.trim(),
+        rejected_at: new Date().toISOString()
       };
+      
+      // Reload invoice data from database to ensure we have the latest
+      await loadInvoice();
       
       toast = { open: true, message: 'Invoice has been rejected and freelancer has been notified.', success: true };
     } catch (err: any) {
@@ -134,127 +242,88 @@
   async function confirmPayNow() {
     closePayModal();
     isPaying = true;
+    
     try {
       if (!invoice) {
         toast = { open: true, message: 'Invoice data is missing.', success: false };
-        isPaying = false;
         return;
       }
 
       if (!selectedToken) {
         toast = { open: true, message: 'Please select a payment token.', success: false };
-        isPaying = false;
         return;
       }
 
-      const signer = await getSigner();
-      let transactionHash = '';
-
-      // Import token utilities
-      const { checkSufficientBalance, checkAndApproveToken, ERC20_ABI } = await import('$lib/utils/tokenUtils');
-
-      // 1. Check sufficient balance
-      const balanceCheck = await checkSufficientBalance(signer, selectedToken, invoice.amount.toString());
-      if (!balanceCheck.sufficient) {
-        throw new Error(`Insufficient ${selectedToken.symbol} balance. You have ${balanceCheck.balance}, but need ${balanceCheck.required}`);
-      }
-
-      if (selectedToken.isNative) {
-        // Native NERO payment
-        const amountNero = ethers.utils.parseEther(invoice.amount.toString());
-        const feeNero = ethers.utils.parseEther('0.2');
-        
-        // 1. Send to freelancer
-        const tx1 = await signer.sendTransaction({
-          to: invoice.user_address,
-          value: amountNero
-        });
-        const receipt1 = await tx1.wait();
-        transactionHash = receipt1.transactionHash;
-        
-        // 2. Send platform fee
-        const tx2 = await signer.sendTransaction({
-          to: PLATFORM_WALLET,
-          value: feeNero
-        });
-        await tx2.wait();
-      } else {
-        // ERC-20 token payment
-        if (!selectedToken.contractAddress) {
-          throw new Error(`Missing contract address for ${selectedToken.symbol}`);
+      // Check if token conversion is needed
+      if (needsConversion) {
+        if (!swapQuote || !swapQuote.valid) {
+          toast = { 
+            open: true, 
+            message: `This invoice expects payment in ${invoice.preferred_token}. Token conversion is not yet available. Please select ${invoice.preferred_token} as your payment token.`, 
+            success: false 
+          };
+          return;
         }
 
-        const tokenContract = new ethers.Contract(
-          selectedToken.contractAddress,
-          ERC20_ABI,
-          signer
-        );
-
-        // Get token decimals
-        const decimals = await tokenContract.decimals();
-        const amount = ethers.utils.parseUnits(invoice.amount.toString(), decimals);
-        const fee = ethers.utils.parseUnits('0.2', decimals); // Platform fee
-
-        // 2. Check and approve token spending if needed
-        const totalAmount = ethers.utils.formatUnits(amount.add(fee), decimals);
-        await checkAndApproveToken(signer, selectedToken, await signer.getAddress(), totalAmount);
-
-        // 3. Send to freelancer
-        const tx1 = await tokenContract.transfer(invoice.user_address, amount);
-        const receipt1 = await tx1.wait();
-        transactionHash = receipt1.transactionHash;
-        
-        const tx2 = await tokenContract.transfer(PLATFORM_WALLET, fee);
-        await tx2.wait();
-      }
-
-      // Update Supabase with payment status and transaction hash
-      await supabase.from('invoices').update({ 
-        status: 'paid',
-        transaction_hash: transactionHash,
-        paid_at: new Date().toISOString()
-      }).eq('id', invoice.id);
-
-      // Check and sponsor gas for client (if enabled by freelancer)
-      try {
-        const signerAddress = await signer.getAddress();
-        // Estimate gas fee for this transaction (approximate)
-        const estimatedGasFee = 0.001; // Rough estimate in NERO
-        
-        const gasSponsored = await gasSponsorshipService.sponsorGas(
-          invoice.user_address, // freelancer (sponsor)
-          signerAddress,       // client (being sponsored)
-          transactionHash,
-          estimatedGasFee,
-          invoice.id
-        );
-        
-        if (gasSponsored) {
-          console.log('✅ Gas was sponsored by freelancer for this payment');
+        // Try to execute token swap (this will currently fail with instructive message)
+        try {
+          const swapResult = await tokenSwapService.executeSwap(await getSigner(), swapQuote);
+          if (!swapResult.success) {
+            toast = { 
+              open: true, 
+              message: swapResult.errorMessage || 'Token conversion failed', 
+              success: false 
+            };
+            return;
+          }
+          
+          // If swap was successful, continue with payment using converted tokens
+          console.log('Token swap successful:', swapResult);
+        } catch (swapError) {
+          console.error('Token swap error:', swapError);
+          toast = { 
+            open: true, 
+            message: `Token conversion failed. Please pay with ${invoice.preferred_token} directly.`, 
+            success: false 
+          };
+          return;
         }
-      } catch (gasSponsorshipError) {
-        console.log('Note: Gas sponsorship failed:', gasSponsorshipError);
-        // Don't fail the payment for gas sponsorship issues
       }
 
-      // Check and complete referrals for the freelancer (if they were referred)
-      try {
-        await referralService.checkAndCompleteReferrals(invoice.user_address);
-      } catch (referralError) {
-        console.log('Note: Referral check failed:', referralError);
-        // Don't fail the payment for referral issues
-      }
-
-      // 4. Notify freelancer
-      addNotification({
-        userWallet: invoice.user_address,
-        type: 'invoice_paid',
-        message: `Invoice "${invoice.project_name}" was paid with ${selectedToken.symbol} by client.`
+      // Execute payment using the payment service
+      const paymentResult = await paymentService.executePayment({
+        invoice: {
+          id: invoice.id,
+          user_address: invoice.user_address,
+          amount: invoice.amount,
+          project_name: invoice.project_name,
+          preferred_token: invoice.preferred_token
+        },
+        selectedToken,
+        platformWallet: PLATFORM_WALLET
       });
 
-      // Update invoice status in-place
-      invoice = { ...invoice, status: 'paid', transaction_hash: transactionHash };
-      toast = { open: true, message: `Payment successful! Paid with ${selectedToken.symbol}.`, success: true };
+      if (paymentResult.success) {
+        // Update invoice status in-place
+        invoice = { 
+          ...invoice, 
+          status: 'paid', 
+          transaction_hash: paymentResult.transactionHash 
+        };
+        
+        toast = { 
+          open: true, 
+          message: `Payment successful! Paid with ${selectedToken.symbol}.${paymentResult.gasSponsorshipUsed ? ' Gas fees were sponsored by the freelancer.' : ''}`, 
+          success: true 
+        };
+      } else {
+        toast = { 
+          open: true, 
+          message: paymentResult.errorMessage || 'Payment failed', 
+          success: false 
+        };
+      }
+
     } catch (err: any) {
       console.error('Payment error:', err);
       toast = { open: true, message: 'Payment failed: ' + (err.message || err), success: false };
@@ -267,10 +336,13 @@
     const id = page.params.id;
     
     if (!id) {
+      toast = { open: true, message: 'No invoice ID provided', success: false };
       return;
     }
 
     try {
+      console.log('Loading invoice with ID:', id);
+      
       // Try to get the invoice by ID
       const { data, error } = await supabase
         .from('invoices')
@@ -279,9 +351,15 @@
         .single();
       
       if (data) {
+        console.log('Invoice loaded (as integer ID):', data);
         invoice = data;
         // Load reminder history for this invoice
         await loadReminderHistory(data.id);
+        
+        // Debug the rejection reason specifically
+        if (data.status === 'rejected') {
+          console.log('Rejection reason from DB:', data.rejection_reason);
+        }
         return;
       }
       
@@ -293,7 +371,14 @@
         .single();
       
       if (data2) {
+        console.log('Invoice loaded (as string ID):', data2);
         invoice = data2;
+        
+        // Debug the rejection reason specifically
+        if (data2.status === 'rejected') {
+          console.log('Rejection reason from DB:', data2.rejection_reason);
+        }
+        
         // Load reminder history for this invoice
         await loadReminderHistory(data2.id);
       }
@@ -387,7 +472,15 @@
     pdf.save(`invoice-${invoice.project_name.replace(/\s+/g, '-').toLowerCase()}-${invoice.id.slice(0, 8)}.pdf`);
   }
 
+
+
   $effect(() => {
+    loadInvoice();
+    // Also update client address when component loads
+    updateClientAddress();
+  });
+
+  onMount(() => {
     loadInvoice();
   });
 </script>
@@ -465,10 +558,11 @@
           <div class="bg-white text-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md">
             <h2 class="text-xl font-bold mb-6">Confirm Payment</h2>
             
-            <!-- Gasless Status Indicator -->
-            <div class="mb-4">
-              <GaslessIndicator compact={false} showDetails={true} />
-            </div>
+            <!-- Gas Sponsorship Status -->
+            <GasSponsorshipStatus 
+              {gasSponsorshipAvailable} 
+              {currentClientAddress} 
+            />
             
             <!-- Token Selection -->
             <div class="mb-6">
@@ -476,27 +570,14 @@
                 Payment Token
               </div>
               <TokenSelector />
-              {#if selectedToken?.gasless || $paymasterStore.isEnabled}
-                <div class="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
-                  <div class="flex items-center">
-                    <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <div>
-                      <p class="text-sm font-medium text-green-800">Gasless transaction enabled!</p>
-                      <p class="text-xs text-green-600">
-                        {#if $paymasterStore.isFirstTimeUser}
-                          First-time user bonus - no network fees
-                        {:else if $paymasterStore.sponsorMode === 'FREE_GAS'}
-                          Platform-sponsored transaction
-                        {:else}
-                          Gas fee paid with {$paymasterStore.selectedPaymentToken}
-                        {/if}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              {/if}
+              
+              <!-- Token Conversion Notice -->
+              <TokenConversionNotice 
+                {selectedToken} 
+                invoicePreferredToken={invoice?.preferred_token}
+                {swapQuote}
+                {isLoadingQuote}
+              />
             </div>
 
             <!-- Token Balance Check -->
@@ -512,39 +593,12 @@
             {/if}
 
             <!-- Payment Breakdown -->
-            <div class="border border-gray-200 rounded-lg p-4 mb-6">
-              <div class="mb-2 flex justify-between">
-                <span>Invoice Amount:</span>
-                <span class="font-medium">{formatCurrency(invoice.amount)}</span>
-              </div>
-              <div class="mb-2 flex justify-between">
-                <span>Platform Fee:</span>
-                <span class="font-medium">0.2 {selectedToken?.symbol || 'NERO'}</span>
-              </div>
-              {#if !($paymasterStore.isEnabled && $paymasterStore.sponsorMode === 'FREE_GAS')}
-                <div class="mb-2 flex justify-between text-sm text-gray-600">
-                  <span>Network Gas Fee:</span>
-                  <span>~0.001 {selectedToken?.symbol || 'NERO'}</span>
-                </div>
-              {:else}
-                <div class="mb-2 flex justify-between text-sm text-green-600">
-                  <span>Network Gas Fee:</span>
-                  <span class="line-through">~0.001 {selectedToken?.symbol || 'NERO'}</span>
-                  <span class="ml-2 font-medium">FREE</span>
-                </div>
-              {/if}
-              <hr class="my-2">
-              <div class="flex justify-between font-bold text-lg">
-                <span>Total to Pay:</span>
-                <span>{formatCurrency(invoice.amount + 0.2)}</span>
-              </div>
-            </div>
-
-            <!-- Platform wallet info -->
-            <div class="mb-6 text-xs text-gray-500 bg-gray-50 p-3 rounded">
-              <p class="mb-1">Platform fee will be sent to:</p>
-              <span class="font-mono text-gray-700">{PLATFORM_WALLET}</span>
-            </div>
+            <PaymentBreakdown 
+              invoiceAmount={invoice.amount}
+              {selectedToken}
+              {gasSponsorshipAvailable}
+              platformWallet={PLATFORM_WALLET}
+            />
 
             <!-- Action buttons -->
             <div class="flex gap-4">
@@ -742,8 +796,13 @@
           <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <h4 class="text-sm font-medium text-red-800 mb-2">Rejection Reason</h4>
             <p class="text-sm text-red-700">
-              {invoice.rejection_reason || 'No reason provided by the client.'}
+              {invoice.rejection_reason ? invoice.rejection_reason : 'No reason provided by the client.'}
             </p>
+            {#if !invoice.rejection_reason}
+              <div class="mt-2 text-xs text-red-600">
+                <em>Note: If you rejected this invoice with a reason, try refreshing the page to see the updated reason.</em>
+              </div>
+            {/if}
           </div>
         {/if}
 
