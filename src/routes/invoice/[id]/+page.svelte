@@ -7,7 +7,7 @@
   import TokenBalanceChecker from '$lib/components/TokenBalanceChecker.svelte';
   import GaslessIndicator from '$lib/components/GaslessIndicator.svelte';
   import { getSigner } from '$lib/utils/aaUtils';
-  import { addNotification } from '$lib/utils/notifications';
+  import { addNotification } from '$lib/utils/notifications.supabase';
   import { selectedPaymentToken } from '$lib/stores/tokenStore';
   import { web3AuthStore } from '$lib/stores/web3AuthStore';
   import { paymasterService, paymasterStore } from '$lib/stores/paymasterStore';
@@ -62,6 +62,7 @@
   let currentClientAddress = $state('');
   let swapQuote = $state<SwapQuote | null>(null);
   let isLoadingQuote = $state(false);
+  let isFavoriteClient = $state(false); // Track if client is a favorite (for fee waiver)
   let needsConversion = $derived(
     selectedToken && invoice?.preferred_token && 
     selectedToken.symbol !== invoice.preferred_token
@@ -158,10 +159,64 @@
     return amount + ' NERO';
   }
 
-  function openPayModal() {
+  // Check if client is a favorite (for fee waiver)
+  async function checkFavoriteClientStatus() {
+    if (!invoice?.user_address || !invoice?.client_email) return false;
+    
+    try {
+      console.log('Checking favorite client status:', {
+        freelancerAddress: invoice.user_address,
+        clientEmail: invoice.client_email
+      });
+      
+      // Use the same check as the payment service uses
+      const { data, error } = await supabase
+        .from('favorite_clients')
+        .select('*')
+        .eq('freelancer_address', invoice.user_address.toLowerCase())
+        .eq('client_email', invoice.client_email.toLowerCase().trim());
+      
+      if (error) {
+        console.error('Error checking favorite client:', error);
+        isFavoriteClient = false;
+        return false;
+      }
+      
+      if (data && data.length > 0) {
+        console.log('Found favorite client match:', data[0]);
+        isFavoriteClient = true;
+        return true;
+      } else {
+        // Try with case-insensitive search
+        const { data: fuzzyData } = await supabase
+          .from('favorite_clients')
+          .select('*')
+          .eq('freelancer_address', invoice.user_address.toLowerCase())
+          .ilike('client_email', `%${invoice.client_email.toLowerCase().trim()}%`);
+        
+        if (fuzzyData && fuzzyData.length > 0) {
+          console.log('Found fuzzy match favorite client:', fuzzyData[0]);
+          isFavoriteClient = true;
+          return true;
+        }
+        
+        console.log('No favorite client match found');
+        isFavoriteClient = false;
+        return false;
+      }
+    } catch (error) {
+      console.error('Error in favorite client check:', error);
+      isFavoriteClient = false;
+      return false;
+    }
+  }
+
+  async function openPayModal() {
     showPayModal = true;
     // Update client address and check gas sponsorship when opening payment modal
-    updateClientAddress();
+    await updateClientAddress();
+    // Also check favorite client status
+    await checkFavoriteClientStatus();
   }
   function closePayModal() {
     showPayModal = false;
@@ -182,7 +237,7 @@
       return;
     }
 
-    closeRejectModal();
+   
     isRejecting = true;
 
     try {
@@ -195,46 +250,89 @@
       console.log('Rejecting invoice with reason:', rejectionReason.trim());
       console.log('Invoice ID:', invoice.id);
 
-      // Get current date for rejection timestamp
-      const now = new Date().toISOString();
+      // Prepare the clean reason string
       const cleanReason = rejectionReason.trim();
 
-      // Update Supabase with rejection status
-      const { data, error: supabaseError } = await supabase.from('invoices').update({ 
+      // Update Supabase with rejection status - handle ID type properly
+      console.log('Updating Supabase with rejection:', {
+        id: invoice.id,
+        id_type: typeof invoice.id,
         status: 'rejected',
         rejection_reason: cleanReason,
-        rejected_at: now
-      }).eq('id', invoice.id);
+        reason_length: cleanReason.length
+      });
+      
+      // Try to determine the correct ID type for the update query
+      let updateQuery;
+      const numericId = parseInt(invoice.id);
+      if (!isNaN(numericId) && numericId.toString() === invoice.id.toString()) {
+        console.log('Using numeric ID for update:', numericId);
+        updateQuery = supabase.from('invoices').update({ 
+          status: 'rejected',
+          rejection_reason: cleanReason
+        }).eq('id', numericId);
+      } else {
+        console.log('Using string ID for update:', invoice.id);
+        updateQuery = supabase.from('invoices').update({ 
+          status: 'rejected',
+          rejection_reason: cleanReason
+        }).eq('id', invoice.id);
+      }
+      
+      const { data, error: supabaseError } = await updateQuery;
 
       console.log('Supabase update result:', { data, error: supabaseError });
 
       if (supabaseError) {
-        throw new Error(supabaseError.message);
+        console.error('Detailed Supabase error:', supabaseError);
+        throw new Error(`Failed to update invoice: ${supabaseError.message}`);
       }
 
       // Notify freelancer about rejection
-      addNotification({
-        userWallet: invoice.user_address,
-        type: 'invoice_rejected',
-        message: `Invoice "${invoice.project_name}" was rejected by client. Reason: ${rejectionReason.trim()}`
-      });
+      try {
+        await addNotification({
+          userWallet: invoice.user_address,
+          type: 'invoice_rejected',
+          message: `Invoice "${invoice.project_name}" was rejected by client. Reason: ${rejectionReason.trim()}`
+        });
+        console.log('Rejection notification sent to freelancer:', invoice.user_address);
+      } catch (notificationError) {
+        console.error('Failed to send rejection notification:', notificationError);
+        // Don't fail the rejection for notification issues
+      }
 
-      // Update invoice status in-place
+      // Update invoice status in-place with the cleaned reason
       invoice = { 
         ...invoice, 
         status: 'rejected', 
-        rejection_reason: rejectionReason.trim(),
-        rejected_at: new Date().toISOString()
+        rejection_reason: cleanReason
       };
       
+      // Log the updated invoice object
+      console.log('Updated invoice object with rejection reason:', {
+        status: invoice.status,
+        reason: invoice.rejection_reason,
+        reason_length: invoice.rejection_reason?.length
+      });
+      
       // Reload invoice data from database to ensure we have the latest
-      await loadInvoice();
+      try {
+        await loadInvoice();
+        console.log('Invoice reloaded from DB after rejection:', {
+          status: invoice?.status,
+          reason: invoice?.rejection_reason,
+          reason_length: invoice?.rejection_reason?.length  
+        });
+      } catch (reloadError) {
+        console.error('Error reloading invoice:', reloadError);
+      }
       
       toast = { open: true, message: 'Invoice has been rejected and freelancer has been notified.', success: true };
     } catch (err: any) {
       console.error('Rejection error:', err);
       toast = { open: true, message: 'Rejection failed: ' + (err.message || err), success: false };
     } finally {
+       closeRejectModal();
       isRejecting = false;
     }
   }
@@ -256,40 +354,31 @@
 
       // Check if token conversion is needed
       if (needsConversion) {
-        if (!swapQuote || !swapQuote.valid) {
-          toast = { 
-            open: true, 
-            message: `This invoice expects payment in ${invoice.preferred_token}. Token conversion is not yet available. Please select ${invoice.preferred_token} as your payment token.`, 
-            success: false 
-          };
-          return;
+        console.log('Token conversion needed:', { from: selectedToken?.symbol, to: invoice.preferred_token });
+        
+        // Implement a fallback mechanism:
+        // 1. Check if a valid swap quote is available
+        if (swapQuote && swapQuote.valid) {
+          console.log('Valid swap quote found, but swap functionality is not yet implemented');
         }
-
-        // Try to execute token swap (this will currently fail with instructive message)
-        try {
-          const swapResult = await tokenSwapService.executeSwap(await getSigner(), swapQuote);
-          if (!swapResult.success) {
-            toast = { 
-              open: true, 
-              message: swapResult.errorMessage || 'Token conversion failed', 
-              success: false 
-            };
-            return;
-          }
-          
-          // If swap was successful, continue with payment using converted tokens
-          console.log('Token swap successful:', swapResult);
-        } catch (swapError) {
-          console.error('Token swap error:', swapError);
-          toast = { 
-            open: true, 
-            message: `Token conversion failed. Please pay with ${invoice.preferred_token} directly.`, 
-            success: false 
-          };
-          return;
-        }
+        
+        // 2. Allow payment to proceed with the selected token as a fallback
+        console.log('Using fallback payment method - direct payment without conversion');
+        
+        // 3. Set a warning toast but don't block the payment
+        toast = { 
+          open: true, 
+          message: `Note: Paying with ${selectedToken.symbol} while freelancer prefers ${invoice.preferred_token}. Any conversion costs will be handled by the recipient.`, 
+          success: true 
+        };
+        
+        // Continue with payment process using the selected token
       }
 
+      // Check favorite client status one more time
+      const feeWaived = await checkFavoriteClientStatus();
+      console.log(`Fee waiver for payment: ${feeWaived ? 'ENABLED' : 'DISABLED'}`);
+      
       // Execute payment using the payment service
       const paymentResult = await paymentService.executePayment({
         invoice: {
@@ -297,25 +386,56 @@
           user_address: invoice.user_address,
           amount: invoice.amount,
           project_name: invoice.project_name,
-          preferred_token: invoice.preferred_token
+          preferred_token: invoice.preferred_token,
+          client_email: invoice.client_email // Include client email for favorite client check
         },
         selectedToken,
         platformWallet: PLATFORM_WALLET
       });
 
       if (paymentResult.success) {
-        // Update invoice status in-place
+        // Update invoice status in-place first
         invoice = { 
           ...invoice, 
           status: 'paid', 
           transaction_hash: paymentResult.transactionHash 
         };
         
+        // Build a success message that includes token conversion info if needed
+        let successMessage = `Payment successful! Paid with ${selectedToken.symbol}.`;
+        
+        // Add conversion message if needed
+        if (needsConversion && invoice.preferred_token) {
+          successMessage += ` The freelancer preferred ${invoice.preferred_token} and will handle any conversion.`;
+        }
+        
+        // Add fee waiver message if applicable
+        if (paymentResult.feeWaived) {
+          successMessage += ' Platform fee was waived as you are a favorite client.';
+        }
+        
+        // Add gas sponsorship message if applicable
+        if (paymentResult.gasSponsorshipUsed) {
+          successMessage += ' Gas fees were sponsored by the freelancer.';
+        }
+        
         toast = { 
           open: true, 
-          message: `Payment successful! Paid with ${selectedToken.symbol}.${paymentResult.gasSponsorshipUsed ? ' Gas fees were sponsored by the freelancer.' : ''}`, 
+          message: successMessage, 
           success: true 
         };
+        
+        // Force reload the invoice from database to ensure we have the latest status
+        try {
+          await loadInvoice();
+          console.log('Invoice reloaded after successful payment:', {
+            status: invoice?.status,
+            transaction_hash: invoice?.transaction_hash,
+            paid_at: invoice?.paid_at
+          });
+        } catch (reloadError) {
+          console.error('Error reloading invoice after payment:', reloadError);
+        }
       } else {
         toast = { 
           open: true, 
@@ -343,44 +463,73 @@
     try {
       console.log('Loading invoice with ID:', id);
       
-      // Try to get the invoice by ID
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('id', parseInt(id)) // Try parsing as integer first
-        .single();
+      // Try to get the invoice by ID - use more detailed logging
+      let invoiceData = null;
+      let invoiceId: string | number = id;
       
-      if (data) {
-        console.log('Invoice loaded (as integer ID):', data);
-        invoice = data;
-        // Load reminder history for this invoice
-        await loadReminderHistory(data.id);
-        
-        // Debug the rejection reason specifically
-        if (data.status === 'rejected') {
-          console.log('Rejection reason from DB:', data.rejection_reason);
+      // Try to determine the correct ID type and query accordingly
+      try {
+        // Check if ID is numeric
+        const numericId = parseInt(id);
+        if (!isNaN(numericId) && numericId.toString() === id) {
+          // Use integer ID
+          console.log('Querying with integer ID:', numericId);
+          const { data, error } = await supabase
+            .from('invoices')
+            .select('*')
+            .eq('id', numericId)
+            .single();
+          
+          if (error) {
+            console.error('Error loading invoice with integer ID:', error);
+          } else if (data) {
+            console.log('Invoice loaded (as integer ID):', data);
+            invoiceData = data;
+          }
+        } else {
+          // Use string ID
+          console.log('Querying with string ID:', id);
+          const { data, error } = await supabase
+            .from('invoices')
+            .select('*')
+            .eq('id', id)
+            .single();
+          
+          if (error) {
+            console.error('Error loading invoice with string ID:', error);
+          } else if (data) {
+            console.log('Invoice loaded (as string ID):', data);
+            invoiceData = data;
+          }
         }
-        return;
+      } catch (queryError) {
+        console.error('Error in invoice query:', queryError);
       }
       
-      // If that fails, try as string
-      const { data: data2, error: error2 } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (data2) {
-        console.log('Invoice loaded (as string ID):', data2);
-        invoice = data2;
+      // Process the loaded invoice data
+      if (invoiceData) {
+        invoice = invoiceData;
         
-        // Debug the rejection reason specifically
-        if (data2.status === 'rejected') {
-          console.log('Rejection reason from DB:', data2.rejection_reason);
+        // Load reminder history
+        await loadReminderHistory(invoiceData.id);
+        
+        // Log rejection reason specifically if this is a rejected invoice
+        if (invoiceData.status === 'rejected') {
+          console.log('Rejection reason from DB:', {
+            reason: invoiceData.rejection_reason,
+            reason_length: invoiceData.rejection_reason?.length,
+            reason_type: typeof invoiceData.rejection_reason
+          });
+          
+          // Ensure the rejection_reason is properly set if it exists
+          if (invoiceData.rejection_reason && invoice) {
+            invoice.rejection_reason = invoiceData.rejection_reason.trim();
+          }
         }
         
-        // Load reminder history for this invoice
-        await loadReminderHistory(data2.id);
+        return invoice;
+      } else {
+        console.error('No invoice data found with ID:', id);
       }
     } catch (err) {
       // Silent fail - just don't load the invoice
@@ -483,6 +632,66 @@
   onMount(() => {
     loadInvoice();
   });
+
+  // Specialized function to just refresh the rejection reason
+  async function refreshRejectionReason() {
+    if (!invoice || !invoice.id) return;
+    
+    try {
+      console.log('Refreshing rejection reason for invoice ID:', invoice.id);
+      
+      // Handle ID type properly for the query
+      let query;
+      const numericId = parseInt(invoice.id);
+      if (!isNaN(numericId) && numericId.toString() === invoice.id.toString()) {
+        console.log('Using numeric ID for refresh:', numericId);
+        query = supabase
+          .from('invoices')
+          .select('rejection_reason, status')
+          .eq('id', numericId)
+          .single();
+      } else {
+        console.log('Using string ID for refresh:', invoice.id);
+        query = supabase
+          .from('invoices')
+          .select('rejection_reason, status')
+          .eq('id', invoice.id)
+          .single();
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error refreshing rejection reason:', error);
+        toast = { open: true, message: 'Failed to refresh rejection reason', success: false };
+        return;
+      }
+      
+      if (data) {
+        console.log('Refreshed invoice data:', data);
+        
+        // Update the invoice object with fresh data (only if invoice exists)
+        if (invoice) {
+          invoice = {
+            ...invoice,
+            rejection_reason: data.rejection_reason,
+            status: data.status
+          };
+        }
+        
+        if (data.rejection_reason) {
+          toast = { open: true, message: 'Rejection reason updated', success: true };
+        } else {
+          toast = { open: true, message: 'No rejection reason found', success: false };
+        }
+      } else {
+        console.log('No data returned from refresh query');
+      }
+    } catch (err) {
+      console.error('Error in refreshRejectionReason:', err);
+      toast = { open: true, message: 'Error refreshing rejection reason', success: false };
+    }
+  }
 </script>
 
 {#if invoice}
@@ -598,6 +807,8 @@
               {selectedToken}
               {gasSponsorshipAvailable}
               platformWallet={PLATFORM_WALLET}
+              feeWaived={isFavoriteClient}
+              clientEmail={invoice?.client_email}
             />
 
             <!-- Action buttons -->
@@ -800,7 +1011,12 @@
             </p>
             {#if !invoice.rejection_reason}
               <div class="mt-2 text-xs text-red-600">
-                <em>Note: If you rejected this invoice with a reason, try refreshing the page to see the updated reason.</em>
+                <button 
+                  class="underline hover:text-red-800" 
+                  onclick={() => refreshRejectionReason()}
+                >
+                  Refresh to check for updated reason
+                </button>
               </div>
             {/if}
           </div>

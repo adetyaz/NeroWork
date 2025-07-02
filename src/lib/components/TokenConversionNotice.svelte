@@ -47,16 +47,15 @@
               <div class="text-xs text-gray-500 mt-1">
                 Price Impact: {swapQuote.priceImpact.toFixed(2)}% | Slippage: {swapQuote.slippage}%
               </div>
-            </div>
-            <div class="mt-2 p-2 bg-red-50 border border-red-200 rounded">
-              <p class="text-xs text-red-700">
-                <strong>Note:</strong> Token swapping is not yet available on NERO Chain. Please select <strong>{invoicePreferredToken}</strong> as your payment token instead.
+            </div>              <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <p class="text-xs text-yellow-700">
+                <strong>Note:</strong> Token swapping is not yet available on NERO Chain. You can proceed with payment using <strong>{selectedToken.symbol}</strong>, but the freelancer may receive less value due to conversion costs they'll handle.
               </p>
             </div>
           {:else if swapQuote && !swapQuote.valid}
-            <div class="mt-2 p-2 bg-red-50 border border-red-200 rounded">
-              <p class="text-xs text-red-700">{swapQuote.errorMessage || 'Conversion not available'}</p>
-              <p class="text-xs text-red-600 mt-1">Please select <strong>{invoicePreferredToken}</strong> for payment.</p>
+            <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <p class="text-xs text-yellow-700">{swapQuote.errorMessage || 'Conversion not available'}</p>
+              <p class="text-xs text-yellow-600 mt-1">You can continue with <strong>{selectedToken.symbol}</strong>, but the freelancer prefers <strong>{invoicePreferredToken}</strong>. They'll handle any conversion costs.</p>
             </div>
           {/if}
         </div>

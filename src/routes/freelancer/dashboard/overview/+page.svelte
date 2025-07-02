@@ -50,14 +50,12 @@ $effect(() => {
       loading = true;
       error = '';
       
-      console.log('Fetching invoices and stats...');
       
       // Always get wallet address from getSigner
       const signer = await getSigner();
       const address = await signer.getAddress();
       freelancerWallet = address;
       
-      console.log('Freelancer wallet:', freelancerWallet);
       
       if (!address) return;
       
@@ -69,16 +67,13 @@ $effect(() => {
         .eq('user_address', address)
         .order('created_at', { ascending: false });
         
-      console.log('Supabase stats response:', { data, supabaseError });
-        
       if (supabaseError) {
         console.error('Supabase stats error:', supabaseError);
         throw new Error(supabaseError.message);
       }
       
       invoices = data && Array.isArray(data) ? data : [];
-      console.log('Loaded stats invoices:', invoices.length);
-      
+
       // Update stats
       stats[0].number = invoices.length;
       stats[2].number = invoices.filter((inv: any) => inv.status === 'paid').length;
@@ -232,7 +227,7 @@ function handleViewAll() {
           <div class="space-y-4">
             {#each milestones.slice(0, 4) as milestone}
               {@const isEarned = earnedBadges.includes(milestone.name)}
-              {@const progress = Math.min((stats[0].number / milestone.count) * 100, 100)}
+              {@const progress = Math.min((stats[2].number / milestone.count) * 100, 100)}
               <div class="flex items-center justify-between">
                 <div class="flex items-center">
                   <div class="w-8 h-8 rounded-full {isEarned ? 'bg-green-500' : 'bg-gray-200'} flex items-center justify-center mr-3">
@@ -246,12 +241,12 @@ function handleViewAll() {
                   </div>
                   <div>
                     <div class="font-medium text-gray-900">{milestone.name}</div>
-                    <div class="text-xs text-gray-600">{milestone.count} invoices</div>
+                    <div class="text-xs text-gray-600">{milestone.count} paid invoices</div>
                   </div>
                 </div>
                 <div class="text-right">
                   <div class="text-sm font-medium {isEarned ? 'text-green-600' : 'text-gray-600'}">
-                    {isEarned ? 'Earned!' : `${stats[0].number}/${milestone.count}`}
+                    {isEarned ? 'Earned!' : `${stats[2].number}/${milestone.count}`}
                   </div>
                   {#if !isEarned}
                     <div class="w-20 h-2 bg-gray-200 rounded-full mt-1">

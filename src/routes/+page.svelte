@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Star, Users, DollarSign, Clock, Award, Briefcase, Shield, Zap, TrendingUp, CheckCircle, ArrowRight, Play } from '@lucide/svelte';
+	import { Star, Users, DollarSign, Clock, Award, Briefcase, Shield, Zap, TrendingUp, CheckCircle, ArrowRight, Play, Twitter } from '@lucide/svelte';
 	import AAWalletConnect from '$lib/components/AAWalletConnect.svelte';
 
 	let walletConnected = $state(false);
@@ -159,21 +159,23 @@
 			</div>
 
 			<div class="relative max-w-4xl mx-auto">
-				<!-- Video placeholder with play button -->
-				<div class="relative bg-gray-800 rounded-2xl overflow-hidden shadow-2xl aspect-video">
-					<div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20"></div>
-					<div class="absolute inset-0 flex items-center justify-center">
-						<button class="bg-white/20 backdrop-blur-sm border border-white/30 rounded-full p-6 hover:bg-white/30 transition-all duration-300 group">
-							<Play class="w-16 h-16 text-white group-hover:scale-110 transition-transform duration-300" />
-						</button>
+				<!-- Loom Video Embed -->
+				<div class="relative rounded-2xl overflow-hidden shadow-2xl">
+					<div style="position: relative; padding-bottom: 56.25%; height: 0;">
+						<iframe 
+							src="https://www.loom.com/embed/70d6c8a78fe64b06a66889febee3a1cf?sid=1d2adbfc-1639-4be1-8edf-734965cf9620" 
+							frameborder="0" 
+							allowfullscreen
+							title="Demo: Complete Invoice Workflow"
+							style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 0.75rem;"
+						></iframe>
 					</div>
-					<div class="absolute bottom-6 left-6">
-						<div class="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
-							<p class="text-white text-sm font-medium">Demo: Complete Invoice Workflow</p>
-							<p class="text-blue-200 text-xs">3:45 minutes</p>
-						</div>
+					<div class="absolute bottom-6 left-6 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
+						<p class="text-white text-sm font-medium">Demo: Complete Invoice Workflow</p>
+						<p class="text-blue-200 text-xs">3:45 minutes</p>
 					</div>
 				</div>
+			</div>
 
 				<!-- Demo features grid -->
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
@@ -200,7 +202,6 @@
 					</div>
 				</div>
 			</div>
-		</div>
 	</section>
 
 	<!-- Features Section -->
@@ -300,15 +301,12 @@
         <div>
           <h4 class="font-semibold mb-4">Follow Us</h4>
           <div class="flex space-x-4">
-            <a href="/" aria-label="Follow us on Twitter" class="bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors">
-              <div class="w-5 h-5 bg-blue-400 rounded"></div>
+            <a href="https://x.com/@neroworkgigs" aria-label="Follow us on Twitter" class="bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors">
+              <div class="w-5 h-5 bg-blue-400 rounded">
+<Twitter />
+							</div>
             </a>
-            <a href="/" aria-label="Follow us on Instagram" class="bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors">
-              <div class="w-5 h-5 bg-pink-400 rounded"></div>
-            </a>
-            <a href="/" aria-label="Follow us on LinkedIn" class="bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors">
-              <div class="w-5 h-5 bg-blue-600 rounded"></div>
-            </a>
+           
           </div>
         </div>
 
@@ -329,7 +327,7 @@
       </div>
 
       <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400 text-sm">
-        <p>&copy; 2024 NeroWork. All rights reserved.</p>
+        <p>&copy; 2025 NeroWork. All rights reserved.</p>
       </div>
     </div>
   </footer>

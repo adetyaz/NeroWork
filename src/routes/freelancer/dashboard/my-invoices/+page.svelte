@@ -2,14 +2,16 @@
 import { supabase } from '$lib/utils/supabaseClient.js';
 import { getSigner } from '$lib/utils/aaUtils';
 import { APP_CONFIG } from '$lib/config';
-import { addNotification } from '$lib/utils/notifications';
+import { addNotification } from '$lib/utils/notifications.supabase';
 import { PaymentReminderService } from '$lib/services/paymentReminderService.js';
 import type { PaymentReminder } from '$lib/types/reminders.js';
+import Toast from '$lib/components/ui/toast.svelte';
 
 let invoices: any[] = $state([]);
 let freelancerWallet: string = $state('');
 let loading = $state(true);
 let error = $state('');
+let toast = $state({ open: false, message: '', success: false });
 
 // Derived state for categorized invoices - use status field as primary source of truth
 let unpaidInvoices = $derived(invoices.filter(inv => 
@@ -72,21 +74,34 @@ async function toggleReminders(invoice: any) {
     if (error) throw error;
     
     // Update local state
+    const wasEnabled = invoice.reminder_enabled;
     invoice.reminder_enabled = !invoice.reminder_enabled;
     invoices = [...invoices];
     
-    addNotification({
-      type: 'success',
-      message: `Reminders ${invoice.reminder_enabled ? 'enabled' : 'disabled'} for this invoice`,
-      userWallet: freelancerWallet
-    });
+    // Show toast notification
+    toast = {
+      open: true,
+      message: `Reminders ${invoice.reminder_enabled ? 'enabled' : 'disabled'} for invoice "${invoice.project_name}"`,
+      success: true
+    };
+    
+    // Send async notification to user
+    try {
+      await addNotification({
+        type: 'success',
+        message: `Reminders ${invoice.reminder_enabled ? 'enabled' : 'disabled'} for invoice "${invoice.project_name}"`,
+        userWallet: freelancerWallet
+      });
+    } catch (notifError) {
+      console.error('Failed to send notification:', notifError);
+    }
   } catch (error) {
     console.error('Error toggling reminders:', error);
-    addNotification({
-      type: 'error',
+    toast = {
+      open: true,
       message: 'Failed to update reminder settings',
-      userWallet: freelancerWallet
-    });
+      success: false
+    };
   }
 }
 
@@ -97,18 +112,30 @@ async function sendManualReminder(invoice: any) {
     // Reload invoices to get updated reminder count
     await loadInvoicesData();
     
-    addNotification({
-      type: 'success',
-      message: 'Manual reminder sent successfully!',
-      userWallet: freelancerWallet
-    });
+    // Show toast notification
+    toast = {
+      open: true,
+      message: `Payment reminder sent for invoice "${invoice.project_name}"`,
+      success: true
+    };
+    
+    // Send async notification to user
+    try {
+      await addNotification({
+        type: 'success',
+        message: `Manual reminder sent for invoice "${invoice.project_name}"`,
+        userWallet: freelancerWallet
+      });
+    } catch (notifError) {
+      console.error('Failed to send notification:', notifError);
+    }
   } catch (error) {
     console.error('Error sending manual reminder:', error);
-    addNotification({
-      type: 'error',
-      message: 'Failed to send manual reminder: ' + (error instanceof Error ? error.message : String(error)),
-      userWallet: freelancerWallet
-    });
+    toast = {
+      open: true,
+      message: 'Failed to send reminder: ' + (error instanceof Error ? error.message : String(error)),
+      success: false
+    };
   }
 }
 
@@ -229,6 +256,27 @@ async function loadInvoicesData() {
 
 function getInvoiceLink(id: string) {
   return `${APP_CONFIG.baseUrl}/invoice/${id}`;
+}
+
+async function copyInvoiceLink(invoice: any) {
+  try {
+    const link = getInvoiceLink(invoice.id);
+    await navigator.clipboard.writeText(link);
+    
+    // Show toast notification
+    toast = {
+      open: true,
+      message: `Invoice link copied for "${invoice.project_name}"`,
+      success: true
+    };
+  } catch (error) {
+    console.error('Failed to copy link:', error);
+    toast = {
+      open: true,
+      message: 'Failed to copy link to clipboard',
+      success: false
+    };
+  }
 }
 
 </script>
@@ -371,20 +419,20 @@ function getInvoiceLink(id: string) {
                     </a>
                     <button 
                       onclick={() => toggleReminders(inv)}
-                      class="text-indigo-600 hover:text-indigo-900"
+                      class="text-indigo-600 hover:text-indigo-900 cursor-pointer hover:bg-indigo-50 px-2 py-1 rounded transition-colors duration-200"
                     >
                       {inv.reminder_enabled ? 'Disable' : 'Enable'} Reminders
                     </button>
                     <button 
                       onclick={() => sendManualReminder(inv)}
-                      class="text-orange-600 hover:text-orange-900"
+                      class="text-orange-600 hover:text-orange-900 cursor-pointer hover:bg-orange-50 px-2 py-1 rounded transition-colors duration-200"
                       title="Send a payment reminder email now"
                     >
                       Send Reminder
                     </button>
                     <button 
-                      class="text-green-600 hover:text-green-900" 
-                      onclick={() => navigator.clipboard.writeText(getInvoiceLink(inv.id))}
+                      class="text-green-600 hover:text-green-900 cursor-pointer hover:bg-green-50 px-2 py-1 rounded transition-colors duration-200" 
+                      onclick={() => copyInvoiceLink(inv)}
                     >
                       Copy Link
                     </button>
@@ -474,8 +522,8 @@ function getInvoiceLink(id: string) {
                       View
                     </a>
                     <button 
-                      class="text-green-600 hover:text-green-900" 
-                      onclick={() => navigator.clipboard.writeText(getInvoiceLink(inv.id))}
+                      class="text-green-600 hover:text-green-900 cursor-pointer hover:bg-green-50 px-2 py-1 rounded transition-colors duration-200" 
+                      onclick={() => copyInvoiceLink(inv)}
                     >
                       Copy Link
                     </button>
@@ -587,8 +635,8 @@ function getInvoiceLink(id: string) {
                       View
                     </a>
                     <button 
-                      class="text-green-600 hover:text-green-900" 
-                      onclick={() => navigator.clipboard.writeText(getInvoiceLink(inv.id))}
+                      class="text-green-600 hover:text-green-900 cursor-pointer hover:bg-green-50 px-2 py-1 rounded transition-colors duration-200" 
+                      onclick={() => copyInvoiceLink(inv)}
                     >
                       Copy Link
                     </button>
@@ -602,3 +650,5 @@ function getInvoiceLink(id: string) {
     </div>
   {/if}
 </div>
+
+<Toast open={toast.open} status={toast.message} success={toast.success} error={false} />

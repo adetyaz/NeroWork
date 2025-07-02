@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import type { PaymentOption } from '$lib/types/tokens';
 import { supabase } from '$lib/utils/supabaseClient';
-import { addNotification } from '$lib/utils/notifications';
+import { addNotification } from '$lib/utils/notifications.supabase';
 import { getSigner } from '$lib/utils/aaUtils';
 import { GasSponsorshipService } from './gasSponsorshipService';
 import { ReferralService } from './referralService';
@@ -56,12 +56,13 @@ export class InvoicePaymentService {
 				'$lib/utils/tokenUtils'
 			);
 
-			// Check if client is a favorite (fee waiver)
 			const isFavoriteClient = await this.checkIfFavoriteClient(
 				invoice.user_address,
 				clientEmail || invoice.client_email
 			);
 			const feeWaived = isFavoriteClient;
+
+			console.log(`Fee waiver status: ${feeWaived ? 'WAIVED' : 'NOT WAIVED'}`);
 
 			// 1. Check sufficient balance (adjust for potential fee waiver)
 			const invoiceAmount = invoice.amount;
@@ -127,7 +128,7 @@ export class InvoicePaymentService {
 			await this.processReferrals(invoice.user_address);
 
 			// 6. Send notification
-			this.sendPaymentNotification(invoice, selectedToken, feeWaived);
+			await this.sendPaymentNotification(invoice, selectedToken, feeWaived);
 
 			return {
 				success: true,
@@ -374,18 +375,36 @@ export class InvoicePaymentService {
 		gasSponsorshipUsed: boolean,
 		feeWaived: boolean
 	): Promise<void> {
-		await supabase
-			.from('invoices')
-			.update({
-				status: 'paid',
-				transaction_hash: transactionHash,
-				paid_at: new Date().toISOString(),
-				payment_token: selectedToken.symbol,
-				payment_token_contract: selectedToken.contractAddress || null,
-				gas_sponsored: gasSponsorshipUsed,
-				fee_waived: feeWaived // Record fee waiver status
-			})
-			.eq('id', invoiceId);
+		// Handle ID type properly for the update query
+		let updateQuery;
+		const numericId = parseInt(invoiceId);
+		if (!isNaN(numericId) && numericId.toString() === invoiceId.toString()) {
+			console.log('Using numeric ID for invoice status update:', numericId);
+			updateQuery = supabase
+				.from('invoices')
+				.update({
+					status: 'paid',
+					chain_tx_hash: transactionHash
+				})
+				.eq('id', numericId);
+		} else {
+			updateQuery = supabase
+				.from('invoices')
+				.update({
+					status: 'paid',
+					chain_tx_hash: transactionHash
+				})
+				.eq('id', invoiceId);
+		}
+
+		const { data, error } = await updateQuery;
+
+		if (error) {
+			console.error('Failed to update invoice status:', error);
+			throw new Error(`Failed to update invoice status: ${error.message}`);
+		} else {
+			console.log('Invoice status updated successfully:', data);
+		}
 	}
 
 	/**
@@ -432,17 +451,23 @@ export class InvoicePaymentService {
 	/**
 	 * Send payment notification to freelancer
 	 */
-	private sendPaymentNotification(
+	private async sendPaymentNotification(
 		invoice: any,
 		selectedToken: PaymentOption,
 		feeWaived: boolean
-	): void {
-		addNotification({
-			userWallet: invoice.user_address,
-			type: 'invoice_paid',
-			message:
-				`Invoice "${invoice.project_name}" was paid with ${selectedToken.symbol} by client.` +
-				(feeWaived ? ' (Fee waived for favorite client)' : '')
-		});
+	): Promise<void> {
+		try {
+			await addNotification({
+				userWallet: invoice.user_address,
+				type: 'invoice_paid',
+				message:
+					`Invoice "${invoice.project_name}" was paid with ${selectedToken.symbol} by client.` +
+					(feeWaived ? ' (Fee waived for favorite client)' : '')
+			});
+			console.log('Payment notification sent to freelancer:', invoice.user_address);
+		} catch (error) {
+			console.error('Failed to send payment notification:', error);
+			// Don't fail the entire payment for notification issues
+		}
 	}
 }

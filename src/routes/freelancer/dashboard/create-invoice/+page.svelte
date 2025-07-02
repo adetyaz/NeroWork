@@ -238,8 +238,10 @@
 					</div>
 
 					<div>
-						<div class="block text-sm font-medium text-gray-700 mb-2">Preferred Payment Token</div>
-						<TokenSelector />
+						<label id="token-selector-label" class="block text-sm font-medium text-gray-700 mb-2">Preferred Payment Token</label>
+						<div aria-labelledby="token-selector-label">
+							<TokenSelector />
+						</div>
 						<p class="mt-1 text-xs text-gray-500">Clients can pay with any supported token, but this shows your preference</p>
 					</div>
 
@@ -273,7 +275,7 @@
 						</div>
 
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">Payment Reminders</label>
+							<label for="reminderEnabled" class="block text-sm font-medium text-gray-700 mb-2">Payment Reminders</label>
 							<div class="flex items-center space-x-3">
 								<input 
 									id="reminderEnabled"
