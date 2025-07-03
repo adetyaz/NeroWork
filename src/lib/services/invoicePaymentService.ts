@@ -461,12 +461,12 @@ export class InvoicePaymentService {
 				userWallet: invoice.user_address,
 				type: 'invoice_paid',
 				message:
-					`Invoice "${invoice.project_name}" was paid with ${selectedToken.symbol} by client.` +
+					`💰 Invoice "${invoice.project_name}" was paid with ${selectedToken.symbol} by client.` +
 					(feeWaived ? ' (Fee waived for favorite client)' : '')
 			});
-			console.log('Payment notification sent to freelancer:', invoice.user_address);
+			console.log('✅ Payment notification sent to freelancer:', invoice.user_address);
 		} catch (error) {
-			console.error('Failed to send payment notification:', error);
+			console.error('❌ Failed to send payment notification:', error);
 			// Don't fail the entire payment for notification issues
 		}
 	}

@@ -3,7 +3,7 @@ import { getSigner, getAAWalletAddress } from '$lib/utils/aaUtils';
 import Toast from './ui/toast.svelte';
 import { onMount } from 'svelte';
 import NotificationsList from './ui/NotificationsList.svelte';
-import { getNotifications } from '$lib/utils/notifications';
+import { getNotifications, getUnreadCount } from '$lib/utils/notifications';
 import { supabase } from '$lib/utils/supabaseClient';
 import { web3AuthStore } from '$lib/stores/web3AuthStore';
 import GaslessIndicator from './GaslessIndicator.svelte';

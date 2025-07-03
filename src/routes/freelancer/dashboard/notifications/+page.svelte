@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount } from 'svelte';
-import { getNotifications, markNotificationRead, addNotification, debugDatabaseConnection, getTableSchema, showEnvironmentInfo, findMissingNotifications, diagnoseRLSIssue, type Notification } from '$lib/utils/notifications';
+import { getNotifications, markNotificationRead, addNotification, type Notification } from '$lib/utils/notifications';
 import { supabase } from '$lib/utils/supabaseClient';
 import NotificationsList from '$lib/components/ui/NotificationsList.svelte';
 
@@ -209,10 +209,6 @@ async function markAsRead(id: string) {
   }
 }
 
-async function checkTableSchema() {
-  console.log('=== TABLE SCHEMA CHECK ===');
-  await getTableSchema('notifications');
-}
 
 async function createNotificationsTable() {
   console.log('=== CREATING NOTIFICATIONS TABLE ===');
@@ -436,13 +432,13 @@ async function testTableAccess() {
           </button>
           <button 
             class="px-3 py-1 bg-red-600 text-white rounded text-xs mr-2" 
-            onclick={debugDatabaseConnection}
+        
           >
             Test DB Connection
           </button>
           <button 
             class="px-3 py-1 bg-indigo-600 text-white rounded text-xs" 
-            onclick={checkTableSchema}
+            
           >
             Check Schema
           </button>

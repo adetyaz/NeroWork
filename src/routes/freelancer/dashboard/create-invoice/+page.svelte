@@ -7,6 +7,7 @@
 	import TokenSelector from '$lib/components/TokenSelector.svelte';
 	import { selectedPaymentToken } from '$lib/stores/tokenStore';
 	import { DUE_DATE_OPTIONS } from '$lib/types/reminders';
+	import { addNotification } from '$lib/utils/notifications';
 
 	let walletAddress = $state('');
 	let projectName = $state('');
@@ -105,6 +106,19 @@
 			}
 			
 			console.log('Invoice created successfully:', insertedData);
+
+			// Send notification about invoice creation
+			try {
+				await addNotification({
+					userWallet: walletAddress,
+					type: 'invoice_created',
+					message: `📄 Invoice "${projectName}" for $${amount} has been created and is ready to be sent to ${clientName}.`
+				});
+				console.log('✅ Invoice creation notification sent');
+			} catch (notifError) {
+				console.error('❌ Failed to send invoice creation notification:', notifError);
+				// Don't fail the invoice creation for notification issues
+			}
 
 			success = true;
 			setTimeout(() => {
