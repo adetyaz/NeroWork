@@ -3,7 +3,7 @@ import { getSigner, getAAWalletAddress } from '$lib/utils/aaUtils';
 import Toast from './ui/toast.svelte';
 import { onMount } from 'svelte';
 import NotificationsList from './ui/NotificationsList.svelte';
-import { getNotifications as getNotificationsFromSupabase } from '$lib/utils/notifications.supabase';
+import { getNotifications } from '$lib/utils/notifications';
 import { supabase } from '$lib/utils/supabaseClient';
 import { web3AuthStore } from '$lib/stores/web3AuthStore';
 import GaslessIndicator from './GaslessIndicator.svelte';
@@ -184,7 +184,7 @@ $effect(() => {
 });
 
 async function fetchNotifications() {
-  notifications = await getNotificationsFromSupabase(userAddress);
+  notifications = await getNotifications(userAddress);
 }
 
 function toggleNotifications() {

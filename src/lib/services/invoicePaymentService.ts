@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import type { PaymentOption } from '$lib/types/tokens';
 import { supabase } from '$lib/utils/supabaseClient';
-import { addNotification } from '$lib/utils/notifications.supabase';
+import { addNotification } from '$lib/utils/notifications';
 import { getSigner } from '$lib/utils/aaUtils';
 import { GasSponsorshipService } from './gasSponsorshipService';
 import { ReferralService } from './referralService';

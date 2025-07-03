@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount } from 'svelte';
-import { page } from '$app/stores';
+import { page } from '$app/state';
 import { ReferralService } from '$lib/services/referralService.js';
 import { addNotification } from '$lib/utils/notifications';
 
@@ -13,7 +13,7 @@ const referralService = ReferralService.getInstance();
 
 onMount(() => {
   // Check if there's a referral code in URL
-  const urlReferralCode = $page.url.searchParams.get('ref');
+  const urlReferralCode = page.url.searchParams.get('ref');
   if (urlReferralCode) {
     referralCode = urlReferralCode;
     validateReferralCode();

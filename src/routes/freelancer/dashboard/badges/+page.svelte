@@ -11,7 +11,7 @@ const milestones = [
 
 import { executeOperation, getSigner } from '$lib/utils/aaUtils';
 import { API_KEY } from '$lib/config';
-import { addNotification as addNotificationToSupabase } from '$lib/utils/notifications.supabase';
+import { addNotification as addNotificationToSupabase } from '$lib/utils/notifications';
 import { supabase } from '$lib/utils/supabaseClient.js';
 
 let invoices: any[] = $state([]);

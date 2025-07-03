@@ -5,12 +5,9 @@
   import Dialog from '$lib/components/ui/Dialog.svelte';
   import TokenSelector from '$lib/components/TokenSelector.svelte';
   import TokenBalanceChecker from '$lib/components/TokenBalanceChecker.svelte';
-  import GaslessIndicator from '$lib/components/GaslessIndicator.svelte';
   import { getSigner } from '$lib/utils/aaUtils';
-  import { addNotification } from '$lib/utils/notifications.supabase';
+  import { addNotification } from '$lib/utils/notifications';
   import { selectedPaymentToken } from '$lib/stores/tokenStore';
-  import { web3AuthStore } from '$lib/stores/web3AuthStore';
-  import { paymasterService, paymasterStore } from '$lib/stores/paymasterStore';
   import { paymentReminderService } from '$lib/services/paymentReminderService';
   import type { PaymentOption } from '$lib/types/tokens';
   import type { PaymentReminder } from '$lib/types/reminders';

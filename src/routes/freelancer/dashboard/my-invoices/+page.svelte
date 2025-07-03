@@ -2,7 +2,7 @@
 import { supabase } from '$lib/utils/supabaseClient.js';
 import { getSigner } from '$lib/utils/aaUtils';
 import { APP_CONFIG } from '$lib/config';
-import { addNotification } from '$lib/utils/notifications.supabase';
+import { addNotification } from '$lib/utils/notifications';
 import { PaymentReminderService } from '$lib/services/paymentReminderService.js';
 import type { PaymentReminder } from '$lib/types/reminders.js';
 import Toast from '$lib/components/ui/toast.svelte';

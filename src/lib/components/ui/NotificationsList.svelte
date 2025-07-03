@@ -1,5 +1,5 @@
 <script lang="ts">
-import { getNotifications as getNotificationsFromSupabase, markNotificationRead as markNotificationReadSupabase } from '$lib/utils/notifications.supabase';
+import { getNotifications, markNotificationRead } from '$lib/utils/notifications';
 
 let { userWallet } = $props();
 
@@ -19,12 +19,12 @@ $effect(() => {
 });
 
 async function fetchNotifications() {
-	notifications = await getNotificationsFromSupabase(userWallet);
+	notifications = await getNotifications(userWallet);
 }
 
 async function markRead(id: string) {
-	await markNotificationReadSupabase(id);
-	notifications = await getNotificationsFromSupabase(userWallet);
+	await markNotificationRead(id);
+	notifications = await getNotifications(userWallet);
 }
 </script>
 
